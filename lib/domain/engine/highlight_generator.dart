@@ -35,6 +35,7 @@ class HighlightGenerator {
         final eventType = _selectEventType(
           minute: currentMinute,
           opponentDefenseRating: opponentDefenseRating,
+          scoreContext: initialContext,
         );
 
         // 선택지 생성
@@ -49,6 +50,31 @@ class HighlightGenerator {
           choices: choices,
         ));
       }
+    }
+
+    // 페널티킥: 낮은 확률로 발생 (5%)
+    if (_random.nextDouble() < 0.05) {
+      final pkMinute = 30 + _random.nextInt(60);
+      highlights.add(HighlightEvent(
+        minute: pkMinute,
+        type: HighlightType.penaltyKick,
+        zone: FieldZone.box,
+        pressure: 3,
+        scoreContext: initialContext,
+        choices: ['shoot'],
+      ));
+    }
+
+    // 클러치 찬스: 마지막에 지고 있을 때 추가
+    if (initialContext == ScoreContext.trailing || _random.nextDouble() < 0.3) {
+      highlights.add(HighlightEvent(
+        minute: 88 + _random.nextInt(5), // 88-92분
+        type: HighlightType.clutchChance,
+        zone: FieldZone.box,
+        pressure: 3,
+        scoreContext: ScoreContext.trailing,
+        choices: ['shoot', 'dribble', 'pass'],
+      ));
     }
 
     // 시간순 정렬
@@ -97,16 +123,21 @@ class HighlightGenerator {
   HighlightType _selectEventType({
     required int minute,
     required int opponentDefenseRating,
+    required ScoreContext scoreContext,
   }) {
     // 상대 수비가 강하면 공격 이벤트 비율 감소
     final defenseModifier = (opponentDefenseRating - 50) / 100;
+    
+    // 지고 있고 후반이면 공격 이벤트 증가
+    final isTrailingLate = scoreContext == ScoreContext.trailing && minute > 60;
+    final urgencyBonus = isTrailingLate ? 0.05 : 0.0;
 
     // 가중치 맵
     final weights = <HighlightType, double>{
-      HighlightType.runInBehind: 0.12 - defenseModifier * 0.05,
+      HighlightType.runInBehind: 0.12 - defenseModifier * 0.05 + urgencyBonus,
       HighlightType.receiveAndTurn: 0.10,
-      HighlightType.oneOnOne: 0.08 - defenseModifier * 0.03,
-      HighlightType.edgeOfBoxShot: 0.12,
+      HighlightType.oneOnOne: 0.08 - defenseModifier * 0.03 + urgencyBonus,
+      HighlightType.edgeOfBoxShot: 0.12 + urgencyBonus,
       HighlightType.quickCounter: 0.10,
       HighlightType.pressing: 0.12 + defenseModifier * 0.05,
       HighlightType.defensiveCover: 0.08,
@@ -155,6 +186,10 @@ class HighlightGenerator {
         return ['compose', 'callForBall', 'safePlay'];
       case HighlightType.coachFeedback:
         return ['accept', 'askRole', 'ignore'];
+      case HighlightType.penaltyKick:
+        return ['shoot'];
+      case HighlightType.clutchChance:
+        return ['shoot', 'dribble', 'pass'];
     }
   }
 
@@ -163,6 +198,8 @@ class HighlightGenerator {
     switch (type) {
       case HighlightType.oneOnOne:
       case HighlightType.setPieceRebound:
+      case HighlightType.penaltyKick:
+      case HighlightType.clutchChance:
         return FieldZone.box;
       case HighlightType.runInBehind:
       case HighlightType.edgeOfBoxShot:

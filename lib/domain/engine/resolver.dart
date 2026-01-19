@@ -2,6 +2,7 @@
 
 import 'dart:math';
 import '../model/models.dart';
+import '../text/commentary.dart';
 
 /// 확률 계산 규칙
 class ProbabilityRules {
@@ -15,6 +16,16 @@ class ProbabilityRules {
   /// 자신감 보너스 계산
   static double confidenceBonus(int confidence) {
     return confidence * 0.02; // -0.06 ~ +0.06
+  }
+
+  /// 모멘텀 보너스 계산
+  static double momentumBonus(int momentum, int consecutiveSuccess) {
+    double bonus = momentum * 0.02; // -0.06 ~ +0.06
+    // 연속 성공 시 추가 보너스
+    if (consecutiveSuccess >= 3) {
+      bonus += 0.05; // HOT 상태
+    }
+    return bonus;
   }
 
   /// 부상 확률 계산
@@ -32,11 +43,13 @@ class EventProbability {
   final double base;
   final Map<String, double> statWeights;
   final double injuryRisk;
+  final double riskMultiplier; // 위험한 선택 시 보상 배율
 
   const EventProbability({
     required this.base,
     required this.statWeights,
     this.injuryRisk = 0,
+    this.riskMultiplier = 1.0,
   });
 
   static const Map<HighlightType, EventProbability> defaults = {
@@ -51,6 +64,7 @@ class EventProbability {
     HighlightType.oneOnOne: EventProbability(
       base: 0.35,
       statWeights: {'shooting': 0.5, 'composure': 0.3, 'ballControl': 0.2},
+      riskMultiplier: 1.5,
     ),
     HighlightType.edgeOfBoxShot: EventProbability(
       base: 0.30,
@@ -87,8 +101,19 @@ class EventProbability {
       statWeights: {'composure': 0.7, 'positioning': 0.3},
     ),
     HighlightType.coachFeedback: EventProbability(
-      base: 1.0, // 항상 성공 (신뢰도 영향)
+      base: 1.0,
       statWeights: {},
+    ),
+    // 새로운 이벤트들
+    HighlightType.penaltyKick: EventProbability(
+      base: 0.75, // 페널티킥은 높은 성공률
+      statWeights: {'shooting': 0.4, 'composure': 0.6},
+      riskMultiplier: 2.0, // 성공 시 큰 보상
+    ),
+    HighlightType.clutchChance: EventProbability(
+      base: 0.30, // 클러치는 어려움
+      statWeights: {'shooting': 0.4, 'composure': 0.4, 'positioning': 0.2},
+      riskMultiplier: 2.5, // 성공 시 극대화된 보상
     ),
   };
 }
@@ -96,8 +121,11 @@ class EventProbability {
 /// 하이라이트 결과 해결자
 class HighlightResolver {
   final Random _random;
+  late final Commentary _commentary;
 
-  HighlightResolver({int? seed}) : _random = Random(seed);
+  HighlightResolver({int? seed}) : _random = Random(seed) {
+    _commentary = Commentary(seed: seed);
+  }
 
   /// 하이라이트 결과 계산
   HighlightResult resolve({
@@ -106,8 +134,11 @@ class HighlightResolver {
     required PlayerStats stats,
     required PlayerStatus status,
     required int opponentRating,
+    int momentum = 0,
+    int consecutiveSuccess = 0,
   }) {
-    final eventProb = EventProbability.defaults[event.type]!;
+    final eventProb = EventProbability.defaults[event.type] ??
+        const EventProbability(base: 0.5, statWeights: {});
 
     // 성공 확률 계산
     final probability = _calculateProbability(
@@ -117,6 +148,9 @@ class HighlightResolver {
       status: status,
       command: command,
       opponentRating: opponentRating,
+      momentum: momentum,
+      consecutiveSuccess: consecutiveSuccess,
+      isClutch: event.type == HighlightType.clutchChance,
     );
 
     final roll = _random.nextDouble();
@@ -140,6 +174,9 @@ class HighlightResolver {
     required PlayerStatus status,
     required CommandType command,
     required int opponentRating,
+    required int momentum,
+    required int consecutiveSuccess,
+    required bool isClutch,
   }) {
     double p = base;
 
@@ -167,6 +204,9 @@ class HighlightResolver {
     // 자신감 보너스
     p += ProbabilityRules.confidenceBonus(status.confidence);
 
+    // 모멘텀 보너스
+    p += ProbabilityRules.momentumBonus(momentum, consecutiveSuccess);
+
     // 상대 난이도
     p -= (opponentRating - 50) / 400;
 
@@ -175,6 +215,14 @@ class HighlightResolver {
       p += 0.15; // 안전하게 하면 성공률 상승
     } else if (command.isRisky) {
       p -= 0.10; // 위험한 플레이는 성공률 하락
+    }
+
+    // 클러치 상황 긴장감
+    if (isClutch) {
+      // 침착성이 낮으면 더 큰 페널티
+      if (stats.composure < 50) {
+        p -= 0.10;
+      }
     }
 
     // 부상 상태 페널티
@@ -194,7 +242,7 @@ class HighlightResolver {
     required PlayerStatus status,
   }) {
     double ratingChange = 0;
-    int fatigueChange = 3; // 기본 피로 증가
+    int fatigueChange = 3;
     int confidenceChange = 0;
     bool isGoal = false;
     bool isAssist = false;
@@ -202,15 +250,18 @@ class HighlightResolver {
     bool isRedCard = false;
     bool isInjury = false;
 
+    final isClutch = event.type == HighlightType.clutchChance;
+    final isPenalty = event.type == HighlightType.penaltyKick;
+    final multiplier = eventProb.riskMultiplier;
+
     if (success) {
-      // 성공 시 결과
       switch (event.type) {
         case HighlightType.oneOnOne:
         case HighlightType.edgeOfBoxShot:
         case HighlightType.setPieceRebound:
           if (command == CommandType.shoot) {
             isGoal = true;
-            ratingChange = 8.0;
+            ratingChange = 8.0 * multiplier;
             confidenceChange = 1;
           } else if (command == CommandType.pass) {
             isAssist = _random.nextDouble() < 0.6;
@@ -220,10 +271,30 @@ class HighlightResolver {
           }
           break;
 
+        case HighlightType.penaltyKick:
+          isGoal = true;
+          ratingChange = 8.0 * multiplier; // 16점!
+          confidenceChange = 2;
+          fatigueChange = 1;
+          break;
+
+        case HighlightType.clutchChance:
+          if (command == CommandType.shoot) {
+            isGoal = true;
+            ratingChange = 8.0 * multiplier; // 20점!
+            confidenceChange = 3; // 최대 자신감
+          } else if (command == CommandType.pass) {
+            isAssist = _random.nextDouble() < 0.7;
+            ratingChange = isAssist ? 10.0 : 5.0;
+            confidenceChange = 2;
+          } else {
+            ratingChange = 3.0;
+          }
+          break;
+
         case HighlightType.runInBehind:
         case HighlightType.quickCounter:
           if (command == CommandType.dribble) {
-            // 1:1 상황 생성 가능
             ratingChange = 3.0;
           } else {
             ratingChange = 2.0;
@@ -243,14 +314,23 @@ class HighlightResolver {
       switch (event.type) {
         case HighlightType.oneOnOne:
         case HighlightType.setPieceRebound:
-          ratingChange = -4.0; // 결정적 찬스 실패
+          ratingChange = -4.0;
           confidenceChange = -1;
+          break;
+
+        case HighlightType.penaltyKick:
+          ratingChange = -8.0; // 실축은 큰 타격
+          confidenceChange = -2;
+          break;
+
+        case HighlightType.clutchChance:
+          ratingChange = -6.0;
+          confidenceChange = -2;
           break;
 
         case HighlightType.pressing:
         case HighlightType.looseBall:
           if (command == CommandType.tackle) {
-            // 태클 실패 시 카드 위험
             if (_random.nextDouble() < 0.25) {
               isYellowCard = true;
               ratingChange = -3.0;
@@ -282,13 +362,16 @@ class HighlightResolver {
       fatigueChange += 2;
     }
 
-    final description = _generateDescription(
+    // 새 코멘터리 시스템 사용
+    final description = _generateRichDescription(
       success: success,
       event: event,
       command: command,
       isGoal: isGoal,
       isAssist: isAssist,
       isYellowCard: isYellowCard,
+      isClutch: isClutch,
+      isPenalty: isPenalty,
     );
 
     return HighlightResult(
@@ -305,106 +388,77 @@ class HighlightResolver {
     );
   }
 
-  /// 결과 설명 생성 (한국어)
-  String _generateDescription({
+  /// 풍부한 결과 설명 생성
+  String _generateRichDescription({
     required bool success,
     required HighlightEvent event,
     required CommandType command,
     required bool isGoal,
     required bool isAssist,
     required bool isYellowCard,
+    required bool isClutch,
+    required bool isPenalty,
   }) {
+    // 특수 상황 처리
     if (isGoal) {
-      return _goalDescriptions[_random.nextInt(_goalDescriptions.length)];
+      return _commentary.getSuccessText(
+        event.type,
+        command,
+        '선수', // 실제로는 선수 이름
+        isGoal: true,
+        isClutch: isClutch,
+      );
     }
 
     if (isAssist) {
-      return _assistDescriptions[_random.nextInt(_assistDescriptions.length)];
+      return _commentary.getSuccessText(
+        event.type,
+        command,
+        '선수',
+        isAssist: true,
+      );
     }
 
     if (isYellowCard) {
       return _yellowCardDescriptions[_random.nextInt(_yellowCardDescriptions.length)];
     }
 
+    // 페널티킥 실패 (특수 처리)
+    if (isPenalty && !success) {
+      return _penaltyMissDescriptions[_random.nextInt(_penaltyMissDescriptions.length)];
+    }
+
+    // 클러치 실패 (특수 처리)
+    if (isClutch && !success) {
+      return _clutchMissDescriptions[_random.nextInt(_clutchMissDescriptions.length)];
+    }
+
     if (success) {
-      return _successDescriptions[event.type]?[_random.nextInt(
-              _successDescriptions[event.type]?.length ?? 1)] ??
-          '좋은 플레이!';
+      return _commentary.getSuccessText(event.type, command, '선수');
     } else {
-      return _failureDescriptions[event.type]?[_random.nextInt(
-              _failureDescriptions[event.type]?.length ?? 1)] ??
-          '아쉬운 장면...';
+      return _commentary.getFailureText(event.type, command, '선수');
     }
   }
 
-  static const _goalDescriptions = [
-    '골! 멋진 마무리!',
-    '골!!! 네트가 흔들린다!',
-    '골! 침착한 마무리!',
-    '골! 환상적인 슈팅!',
-    '골! 골키퍼가 손도 못 댔다!',
-  ];
-
-  static const _assistDescriptions = [
-    '완벽한 패스! 어시스트!',
-    '결정적인 패스가 득점으로 이어졌다!',
-    '환상적인 스루패스! 어시스트 기록!',
-  ];
-
   static const _yellowCardDescriptions = [
-    '거친 태클로 경고를 받았다.',
-    '주심이 옐로카드를 꺼내든다!',
-    '조심해야 한다. 경고 1장.',
+    '⚠️ 거친 태클로 경고를 받았다.',
+    '⚠️ 주심이 옐로카드를 꺼내든다!',
+    '⚠️ 조심해야 한다. 경고 1장.',
   ];
 
-  static const _successDescriptions = <HighlightType, List<String>>{
-    HighlightType.runInBehind: [
-      '수비 라인 뒤로 침투 성공!',
-      '타이밍 좋게 빠져나갔다!',
-      '오프사이드 라인을 뚫었다!',
-    ],
-    HighlightType.receiveAndTurn: [
-      '등지고 받아 멋지게 턴!',
-      '수비수를 등지고 몸을 틀었다!',
-      '화려한 터닝으로 공간 창출!',
-    ],
-    HighlightType.pressing: [
-      '날카로운 압박! 볼을 빼앗았다!',
-      '전방 압박 성공! 찬스 창출!',
-      '끈질긴 압박이 결실을 맺었다!',
-    ],
-    HighlightType.quickCounter: [
-      '빠른 역습 전개!',
-      '순식간에 상대 진영을 향해 질주!',
-      '카운터 어택!',
-    ],
-    HighlightType.looseBall: [
-      '세컨볼 경합 승리!',
-      '순발력 있게 공을 잡았다!',
-      '볼 경합에서 이겼다!',
-    ],
-  };
+  static const _penaltyMissDescriptions = [
+    '💔 아아... 키퍼가 막았다!!!',
+    '💔 골대 위로... 하늘을 향해 날아갔다!',
+    '💔 골포스트! 믿을 수 없다...',
+    '💔 키퍼의 신들린 선방! 실축의 아픔...',
+    '💔 놓쳤다... 가장 쉬운 기회를...',
+  ];
 
-  static const _failureDescriptions = <HighlightType, List<String>>{
-    HighlightType.oneOnOne: [
-      '1대1 상황에서 놓쳤다...',
-      '골키퍼에게 막혔다!',
-      '결정적 찬스를 날렸다...',
-    ],
-    HighlightType.runInBehind: [
-      '오프사이드!',
-      '침투 타이밍을 놓쳤다.',
-      '수비에 읽혔다.',
-    ],
-    HighlightType.pressing: [
-      '압박이 뚫렸다.',
-      '상대가 여유롭게 빠져나갔다.',
-      '체력 소모만 했다.',
-    ],
-    HighlightType.edgeOfBoxShot: [
-      '슛이 빗나갔다!',
-      '골대를 벗어났다.',
-      '힘없는 슈팅...',
-    ],
-  };
+  static const _clutchMissDescriptions = [
+    '💔 아... 아쉽다! 마지막 기회였는데!',
+    '💔 운명의 장난인가... 놓쳤다.',
+    '💔 하늘도 야속하다... 아깝다!',
+    '💔 끝... 역전의 꿈이 사라졌다.',
+    '💔 너무 아쉽다... 이게 축구다.',
+  ];
 }

@@ -325,29 +325,33 @@ class _HighlightChoices extends StatelessWidget {
   String _getEventDescription(HighlightType type) {
     switch (type) {
       case HighlightType.runInBehind:
-        return '수비 라인 뒤 공간이 보인다!';
+        return '🏃 수비 라인 뒤 공간이 보인다!';
       case HighlightType.receiveAndTurn:
-        return '등지고 공을 받았다!';
+        return '🔄 등지고 공을 받았다!';
       case HighlightType.oneOnOne:
-        return '키퍼와 1대1 상황!';
+        return '⚽ 키퍼와 1대1 상황!';
       case HighlightType.edgeOfBoxShot:
-        return '박스 앞에서 슈팅 찬스!';
+        return '🎯 박스 앞에서 슈팅 찬스!';
       case HighlightType.quickCounter:
-        return '빠른 역습 기회!';
+        return '💨 빠른 역습 기회!';
       case HighlightType.pressing:
-        return '전방에서 압박 상황!';
+        return '💪 전방에서 압박 상황!';
       case HighlightType.defensiveCover:
-        return '수비 커버가 필요하다!';
+        return '🛡️ 수비 커버가 필요하다!';
       case HighlightType.looseBall:
-        return '세컨볼 경합!';
+        return '⚔️ 세컨볼 경합!';
       case HighlightType.setPieceRebound:
-        return '세트피스 후 리바운드!';
+        return '🎯 세트피스 후 리바운드!';
       case HighlightType.fatigueMoment:
-        return '숨이 차오른다...';
+        return '😓 숨이 차오른다...';
       case HighlightType.mentalPressure:
-        return '멘탈 압박이 온다!';
+        return '😰 멘탈 압박이 온다!';
       case HighlightType.coachFeedback:
-        return '감독이 지시를 내린다.';
+        return '📋 감독이 지시를 내린다.';
+      case HighlightType.penaltyKick:
+        return '🥅 페널티킥!!! 골대 앞에 섰다!';
+      case HighlightType.clutchChance:
+        return '🔥 마지막 기회! 모든 것을 걸어라!';
     }
   }
 }

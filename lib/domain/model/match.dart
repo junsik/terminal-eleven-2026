@@ -69,6 +69,10 @@ enum HighlightType {
   mentalPressure, // 멘탈 압박
   @JsonValue('coachFeedback')
   coachFeedback, // 코치 피드백
+  @JsonValue('penaltyKick')
+  penaltyKick, // 페널티킥
+  @JsonValue('clutchChance')
+  clutchChance, // 클러치 찬스 (막판 결정적 기회)
 }
 
 /// 하이라이트 이벤트
@@ -209,6 +213,8 @@ class MatchSession with _$MatchSession {
     @Default([]) List<LogLine> log, // 경기 로그
     @Default(RatingAccumulator()) RatingAccumulator ratingAccumulator, // 평점 누적
     required int rngSeed, // 랜덤 시드
+    @Default(0) int momentum, // 모멘텀 (-3 ~ +3)
+    @Default(0) int consecutiveSuccess, // 연속 성공 횟수
   }) = _MatchSession;
 
   factory MatchSession.fromJson(Map<String, dynamic> json) =>

@@ -1519,7 +1519,9 @@ mixin _$MatchSession {
   List<LogLine> get log => throw _privateConstructorUsedError; // 경기 로그
   RatingAccumulator get ratingAccumulator =>
       throw _privateConstructorUsedError; // 평점 누적
-  int get rngSeed => throw _privateConstructorUsedError;
+  int get rngSeed => throw _privateConstructorUsedError; // 랜덤 시드
+  int get momentum => throw _privateConstructorUsedError; // 모멘텀 (-3 ~ +3)
+  int get consecutiveSuccess => throw _privateConstructorUsedError;
 
   /// Serializes this MatchSession to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -1552,6 +1554,8 @@ abstract class $MatchSessionCopyWith<$Res> {
     List<LogLine> log,
     RatingAccumulator ratingAccumulator,
     int rngSeed,
+    int momentum,
+    int consecutiveSuccess,
   });
 
   $ScoreCopyWith<$Res> get score;
@@ -1586,6 +1590,8 @@ class _$MatchSessionCopyWithImpl<$Res, $Val extends MatchSession>
     Object? log = null,
     Object? ratingAccumulator = null,
     Object? rngSeed = null,
+    Object? momentum = null,
+    Object? consecutiveSuccess = null,
   }) {
     return _then(
       _value.copyWith(
@@ -1641,6 +1647,14 @@ class _$MatchSessionCopyWithImpl<$Res, $Val extends MatchSession>
                 ? _value.rngSeed
                 : rngSeed // ignore: cast_nullable_to_non_nullable
                       as int,
+            momentum: null == momentum
+                ? _value.momentum
+                : momentum // ignore: cast_nullable_to_non_nullable
+                      as int,
+            consecutiveSuccess: null == consecutiveSuccess
+                ? _value.consecutiveSuccess
+                : consecutiveSuccess // ignore: cast_nullable_to_non_nullable
+                      as int,
           )
           as $Val,
     );
@@ -1690,6 +1704,8 @@ abstract class _$$MatchSessionImplCopyWith<$Res>
     List<LogLine> log,
     RatingAccumulator ratingAccumulator,
     int rngSeed,
+    int momentum,
+    int consecutiveSuccess,
   });
 
   @override
@@ -1725,6 +1741,8 @@ class __$$MatchSessionImplCopyWithImpl<$Res>
     Object? log = null,
     Object? ratingAccumulator = null,
     Object? rngSeed = null,
+    Object? momentum = null,
+    Object? consecutiveSuccess = null,
   }) {
     return _then(
       _$MatchSessionImpl(
@@ -1780,6 +1798,14 @@ class __$$MatchSessionImplCopyWithImpl<$Res>
             ? _value.rngSeed
             : rngSeed // ignore: cast_nullable_to_non_nullable
                   as int,
+        momentum: null == momentum
+            ? _value.momentum
+            : momentum // ignore: cast_nullable_to_non_nullable
+                  as int,
+        consecutiveSuccess: null == consecutiveSuccess
+            ? _value.consecutiveSuccess
+            : consecutiveSuccess // ignore: cast_nullable_to_non_nullable
+                  as int,
       ),
     );
   }
@@ -1802,6 +1828,8 @@ class _$MatchSessionImpl implements _MatchSession {
     final List<LogLine> log = const [],
     this.ratingAccumulator = const RatingAccumulator(),
     required this.rngSeed,
+    this.momentum = 0,
+    this.consecutiveSuccess = 0,
   }) : _highlights = highlights,
        _log = log;
 
@@ -1863,10 +1891,18 @@ class _$MatchSessionImpl implements _MatchSession {
   // 평점 누적
   @override
   final int rngSeed;
+  // 랜덤 시드
+  @override
+  @JsonKey()
+  final int momentum;
+  // 모멘텀 (-3 ~ +3)
+  @override
+  @JsonKey()
+  final int consecutiveSuccess;
 
   @override
   String toString() {
-    return 'MatchSession(id: $id, fixtureId: $fixtureId, homeTeamId: $homeTeamId, awayTeamId: $awayTeamId, isHome: $isHome, phase: $phase, minute: $minute, score: $score, highlights: $highlights, currentHighlightIndex: $currentHighlightIndex, log: $log, ratingAccumulator: $ratingAccumulator, rngSeed: $rngSeed)';
+    return 'MatchSession(id: $id, fixtureId: $fixtureId, homeTeamId: $homeTeamId, awayTeamId: $awayTeamId, isHome: $isHome, phase: $phase, minute: $minute, score: $score, highlights: $highlights, currentHighlightIndex: $currentHighlightIndex, log: $log, ratingAccumulator: $ratingAccumulator, rngSeed: $rngSeed, momentum: $momentum, consecutiveSuccess: $consecutiveSuccess)';
   }
 
   @override
@@ -1894,7 +1930,11 @@ class _$MatchSessionImpl implements _MatchSession {
             const DeepCollectionEquality().equals(other._log, _log) &&
             (identical(other.ratingAccumulator, ratingAccumulator) ||
                 other.ratingAccumulator == ratingAccumulator) &&
-            (identical(other.rngSeed, rngSeed) || other.rngSeed == rngSeed));
+            (identical(other.rngSeed, rngSeed) || other.rngSeed == rngSeed) &&
+            (identical(other.momentum, momentum) ||
+                other.momentum == momentum) &&
+            (identical(other.consecutiveSuccess, consecutiveSuccess) ||
+                other.consecutiveSuccess == consecutiveSuccess));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1914,6 +1954,8 @@ class _$MatchSessionImpl implements _MatchSession {
     const DeepCollectionEquality().hash(_log),
     ratingAccumulator,
     rngSeed,
+    momentum,
+    consecutiveSuccess,
   );
 
   /// Create a copy of MatchSession
@@ -1945,6 +1987,8 @@ abstract class _MatchSession implements MatchSession {
     final List<LogLine> log,
     final RatingAccumulator ratingAccumulator,
     required final int rngSeed,
+    final int momentum,
+    final int consecutiveSuccess,
   }) = _$MatchSessionImpl;
 
   factory _MatchSession.fromJson(Map<String, dynamic> json) =
@@ -1975,7 +2019,11 @@ abstract class _MatchSession implements MatchSession {
   @override
   RatingAccumulator get ratingAccumulator; // 평점 누적
   @override
-  int get rngSeed;
+  int get rngSeed; // 랜덤 시드
+  @override
+  int get momentum; // 모멘텀 (-3 ~ +3)
+  @override
+  int get consecutiveSuccess;
 
   /// Create a copy of MatchSession
   /// with the given fields replaced by the non-null parameter values.

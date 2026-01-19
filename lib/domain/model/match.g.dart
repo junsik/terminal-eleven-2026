@@ -48,6 +48,8 @@ const _$HighlightTypeEnumMap = {
   HighlightType.fatigueMoment: 'fatigueMoment',
   HighlightType.mentalPressure: 'mentalPressure',
   HighlightType.coachFeedback: 'coachFeedback',
+  HighlightType.penaltyKick: 'penaltyKick',
+  HighlightType.clutchChance: 'clutchChance',
 };
 
 const _$FieldZoneEnumMap = {
@@ -187,6 +189,8 @@ _$MatchSessionImpl _$$MatchSessionImplFromJson(Map<String, dynamic> json) =>
               json['ratingAccumulator'] as Map<String, dynamic>,
             ),
       rngSeed: (json['rngSeed'] as num).toInt(),
+      momentum: (json['momentum'] as num?)?.toInt() ?? 0,
+      consecutiveSuccess: (json['consecutiveSuccess'] as num?)?.toInt() ?? 0,
     );
 
 Map<String, dynamic> _$$MatchSessionImplToJson(_$MatchSessionImpl instance) =>
@@ -204,6 +208,8 @@ Map<String, dynamic> _$$MatchSessionImplToJson(_$MatchSessionImpl instance) =>
       'log': instance.log,
       'ratingAccumulator': instance.ratingAccumulator,
       'rngSeed': instance.rngSeed,
+      'momentum': instance.momentum,
+      'consecutiveSuccess': instance.consecutiveSuccess,
     };
 
 const _$MatchPhaseEnumMap = {
