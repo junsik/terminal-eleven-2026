@@ -28,7 +28,9 @@ mixin _$GameSnapshot {
   Season get season => throw _privateConstructorUsedError; // 현재 시즌
   MatchSession? get activeMatch =>
       throw _privateConstructorUsedError; // 진행 중인 경기 (있을 경우)
-  int get weeklyActionsRemaining => throw _privateConstructorUsedError;
+  int get weeklyActionsRemaining =>
+      throw _privateConstructorUsedError; // 이번 주 남은 행동 횟수
+  LeagueStats? get leagueStats => throw _privateConstructorUsedError;
 
   /// Serializes this GameSnapshot to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -55,11 +57,13 @@ abstract class $GameSnapshotCopyWith<$Res> {
     Season season,
     MatchSession? activeMatch,
     int weeklyActionsRemaining,
+    LeagueStats? leagueStats,
   });
 
   $PlayerCharacterCopyWith<$Res> get pc;
   $SeasonCopyWith<$Res> get season;
   $MatchSessionCopyWith<$Res>? get activeMatch;
+  $LeagueStatsCopyWith<$Res>? get leagueStats;
 }
 
 /// @nodoc
@@ -84,6 +88,7 @@ class _$GameSnapshotCopyWithImpl<$Res, $Val extends GameSnapshot>
     Object? season = null,
     Object? activeMatch = freezed,
     Object? weeklyActionsRemaining = null,
+    Object? leagueStats = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -115,6 +120,10 @@ class _$GameSnapshotCopyWithImpl<$Res, $Val extends GameSnapshot>
                 ? _value.weeklyActionsRemaining
                 : weeklyActionsRemaining // ignore: cast_nullable_to_non_nullable
                       as int,
+            leagueStats: freezed == leagueStats
+                ? _value.leagueStats
+                : leagueStats // ignore: cast_nullable_to_non_nullable
+                      as LeagueStats?,
           )
           as $Val,
     );
@@ -153,6 +162,20 @@ class _$GameSnapshotCopyWithImpl<$Res, $Val extends GameSnapshot>
       return _then(_value.copyWith(activeMatch: value) as $Val);
     });
   }
+
+  /// Create a copy of GameSnapshot
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $LeagueStatsCopyWith<$Res>? get leagueStats {
+    if (_value.leagueStats == null) {
+      return null;
+    }
+
+    return $LeagueStatsCopyWith<$Res>(_value.leagueStats!, (value) {
+      return _then(_value.copyWith(leagueStats: value) as $Val);
+    });
+  }
 }
 
 /// @nodoc
@@ -172,6 +195,7 @@ abstract class _$$GameSnapshotImplCopyWith<$Res>
     Season season,
     MatchSession? activeMatch,
     int weeklyActionsRemaining,
+    LeagueStats? leagueStats,
   });
 
   @override
@@ -180,6 +204,8 @@ abstract class _$$GameSnapshotImplCopyWith<$Res>
   $SeasonCopyWith<$Res> get season;
   @override
   $MatchSessionCopyWith<$Res>? get activeMatch;
+  @override
+  $LeagueStatsCopyWith<$Res>? get leagueStats;
 }
 
 /// @nodoc
@@ -203,6 +229,7 @@ class __$$GameSnapshotImplCopyWithImpl<$Res>
     Object? season = null,
     Object? activeMatch = freezed,
     Object? weeklyActionsRemaining = null,
+    Object? leagueStats = freezed,
   }) {
     return _then(
       _$GameSnapshotImpl(
@@ -234,6 +261,10 @@ class __$$GameSnapshotImplCopyWithImpl<$Res>
             ? _value.weeklyActionsRemaining
             : weeklyActionsRemaining // ignore: cast_nullable_to_non_nullable
                   as int,
+        leagueStats: freezed == leagueStats
+            ? _value.leagueStats
+            : leagueStats // ignore: cast_nullable_to_non_nullable
+                  as LeagueStats?,
       ),
     );
   }
@@ -250,6 +281,7 @@ class _$GameSnapshotImpl implements _GameSnapshot {
     required this.season,
     this.activeMatch,
     this.weeklyActionsRemaining = 3,
+    this.leagueStats,
   });
 
   factory _$GameSnapshotImpl.fromJson(Map<String, dynamic> json) =>
@@ -278,10 +310,13 @@ class _$GameSnapshotImpl implements _GameSnapshot {
   @override
   @JsonKey()
   final int weeklyActionsRemaining;
+  // 이번 주 남은 행동 횟수
+  @override
+  final LeagueStats? leagueStats;
 
   @override
   String toString() {
-    return 'GameSnapshot(version: $version, savedAt: $savedAt, gameState: $gameState, pc: $pc, season: $season, activeMatch: $activeMatch, weeklyActionsRemaining: $weeklyActionsRemaining)';
+    return 'GameSnapshot(version: $version, savedAt: $savedAt, gameState: $gameState, pc: $pc, season: $season, activeMatch: $activeMatch, weeklyActionsRemaining: $weeklyActionsRemaining, leagueStats: $leagueStats)';
   }
 
   @override
@@ -298,7 +333,9 @@ class _$GameSnapshotImpl implements _GameSnapshot {
             (identical(other.activeMatch, activeMatch) ||
                 other.activeMatch == activeMatch) &&
             (identical(other.weeklyActionsRemaining, weeklyActionsRemaining) ||
-                other.weeklyActionsRemaining == weeklyActionsRemaining));
+                other.weeklyActionsRemaining == weeklyActionsRemaining) &&
+            (identical(other.leagueStats, leagueStats) ||
+                other.leagueStats == leagueStats));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -312,6 +349,7 @@ class _$GameSnapshotImpl implements _GameSnapshot {
     season,
     activeMatch,
     weeklyActionsRemaining,
+    leagueStats,
   );
 
   /// Create a copy of GameSnapshot
@@ -337,6 +375,7 @@ abstract class _GameSnapshot implements GameSnapshot {
     required final Season season,
     final MatchSession? activeMatch,
     final int weeklyActionsRemaining,
+    final LeagueStats? leagueStats,
   }) = _$GameSnapshotImpl;
 
   factory _GameSnapshot.fromJson(Map<String, dynamic> json) =
@@ -355,7 +394,9 @@ abstract class _GameSnapshot implements GameSnapshot {
   @override
   MatchSession? get activeMatch; // 진행 중인 경기 (있을 경우)
   @override
-  int get weeklyActionsRemaining;
+  int get weeklyActionsRemaining; // 이번 주 남은 행동 횟수
+  @override
+  LeagueStats? get leagueStats;
 
   /// Create a copy of GameSnapshot
   /// with the given fields replaced by the non-null parameter values.

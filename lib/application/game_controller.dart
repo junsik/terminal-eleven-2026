@@ -14,6 +14,7 @@ class GameController extends StateNotifier<GameSnapshot?> {
   final _uuid = const Uuid();
   late HighlightGenerator _highlightGenerator;
   late HighlightResolver _resolver;
+  late LeagueSimulator _leagueSimulator;
 
   /// Auto-save on state changes
   Future<void> _autoSave() async {
@@ -31,6 +32,7 @@ class GameController extends StateNotifier<GameSnapshot?> {
     final seed = DateTime.now().millisecondsSinceEpoch;
     _highlightGenerator = HighlightGenerator(seed: seed);
     _resolver = HighlightResolver(seed: seed);
+    _leagueSimulator = LeagueSimulator(seed: seed);
 
     // 팀 데이터 생성
     final teams = LeagueData.createDefaultTeams();
@@ -55,11 +57,19 @@ class GameController extends StateNotifier<GameSnapshot?> {
       standings: standings,
     );
 
+    // 리그 스탯 초기화 (AI 선수 생성)
+    final leagueStats = _leagueSimulator.initializeLeague(
+      teams,
+      pc.profile.id,
+      teamId,
+    );
+
     state = GameSnapshot(
       savedAt: DateTime.now(),
       gameState: GameState.home,
       pc: pc,
       season: season,
+      leagueStats: leagueStats,
     );
     _autoSave();
   }
@@ -69,6 +79,7 @@ class GameController extends StateNotifier<GameSnapshot?> {
     final seed = DateTime.now().millisecondsSinceEpoch;
     _highlightGenerator = HighlightGenerator(seed: seed);
     _resolver = HighlightResolver(seed: seed);
+    _leagueSimulator = LeagueSimulator(seed: seed);
     state = snapshot;
   }
 

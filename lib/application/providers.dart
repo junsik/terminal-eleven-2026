@@ -74,3 +74,8 @@ final matchRatingProvider = Provider<double>((ref) {
   final match = ref.watch(activeMatchProvider);
   return match?.ratingAccumulator.finalRating ?? 6.0;
 });
+
+/// 리그 스탯 Provider (개인 순위용)
+final leagueStatsProvider = Provider<LeagueStats?>((ref) {
+  return ref.watch(gameControllerProvider)?.leagueStats;
+});

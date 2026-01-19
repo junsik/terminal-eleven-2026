@@ -292,18 +292,27 @@ class HomeScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  '순위표',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                Text(
-                  '내 순위: $pcRank위',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ],
+            InkWell(
+              onTap: () => context.push('/standings'),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '순위표',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  Row(
+                    children: [
+                      Text(
+                        '내 순위: $pcRank위',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.chevron_right, size: 16),
+                    ],
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 12),
             // 헤더

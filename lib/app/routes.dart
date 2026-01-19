@@ -10,6 +10,7 @@ import '../presentation/summary/summary_screen.dart';
 import '../presentation/career/career_screen.dart';
 import '../presentation/lobby/lobby_screen.dart';
 import '../presentation/inbox/inbox_screen.dart';
+import '../presentation/standings/standings_screen.dart';
 
 /// GoRouter Provider
 final routerProvider = Provider<GoRouter>((ref) {
@@ -50,6 +51,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/inbox',
         name: 'inbox',
         builder: (context, state) => const InboxScreen(),
+      ),
+      GoRoute(
+        path: '/standings',
+        name: 'standings',
+        builder: (context, state) => const StandingsScreen(),
       ),
     ],
     redirect: (context, state) {

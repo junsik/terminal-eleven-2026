@@ -4,6 +4,7 @@ import 'package:freezed_annotation/freezed_annotation.dart';
 import 'player.dart';
 import 'team.dart';
 import 'match.dart';
+import 'league.dart';
 
 part 'game_snapshot.freezed.dart';
 part 'game_snapshot.g.dart';
@@ -112,6 +113,7 @@ class GameSnapshot with _$GameSnapshot {
     required Season season, // 현재 시즌
     MatchSession? activeMatch, // 진행 중인 경기 (있을 경우)
     @Default(3) int weeklyActionsRemaining, // 이번 주 남은 행동 횟수
+    LeagueStats? leagueStats, // 개인 순위용 리그 통계
   }) = _GameSnapshot;
 
   factory GameSnapshot.fromJson(Map<String, dynamic> json) =>
