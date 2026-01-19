@@ -416,13 +416,13 @@ class GameController extends StateNotifier<GameSnapshot?> {
       );
     }
 
-    // 순위표 업데이트
+    // 순위표 업데이트 (PC의 경기)
     final homeTeamId = match.homeTeamId;
     final awayTeamId = match.awayTeamId;
     final homeScore = match.score.home;
     final awayScore = match.score.away;
 
-    final updatedStandings = state!.season.standings.map((row) {
+    var updatedStandings = state!.season.standings.map((row) {
       if (row.teamId == homeTeamId) {
         return row.copyWith(
           played: row.played + 1,
@@ -445,8 +445,8 @@ class GameController extends StateNotifier<GameSnapshot?> {
       return row;
     }).toList();
 
-    // 경기 결과 저장
-    final updatedFixtures = state!.season.fixtures.map((f) {
+    // PC 경기 결과 저장
+    var updatedFixtures = state!.season.fixtures.map((f) {
       if (f.id == match.fixtureId) {
         return f.copyWith(
           isPlayed: true,
@@ -456,6 +456,57 @@ class GameController extends StateNotifier<GameSnapshot?> {
       }
       return f;
     }).toList();
+
+    // 🆕 AI 팀들의 경기 시뮬레이션 (같은 라운드)
+    final currentRound = state!.season.currentRound;
+    final random = Random();
+    final pcTeamId = state!.pc.profile.teamId;
+
+    for (var i = 0; i < updatedFixtures.length; i++) {
+      final fixture = updatedFixtures[i];
+      
+      // 같은 라운드 + 아직 안 한 경기 + PC팀 경기 아님
+      if (fixture.round == currentRound &&
+          !fixture.isPlayed &&
+          fixture.homeTeamId != pcTeamId &&
+          fixture.awayTeamId != pcTeamId) {
+        
+        // AI 경기 시뮬레이션 (간단한 랜덤)
+        final aiHomeScore = random.nextInt(4); // 0-3 골
+        final aiAwayScore = random.nextInt(4);
+
+        // 경기 결과 업데이트
+        updatedFixtures[i] = fixture.copyWith(
+          isPlayed: true,
+          homeScore: aiHomeScore,
+          awayScore: aiAwayScore,
+        );
+
+        // 순위표 업데이트
+        updatedStandings = updatedStandings.map((row) {
+          if (row.teamId == fixture.homeTeamId) {
+            return row.copyWith(
+              played: row.played + 1,
+              won: row.won + (aiHomeScore > aiAwayScore ? 1 : 0),
+              drawn: row.drawn + (aiHomeScore == aiAwayScore ? 1 : 0),
+              lost: row.lost + (aiHomeScore < aiAwayScore ? 1 : 0),
+              goalsFor: row.goalsFor + aiHomeScore,
+              goalsAgainst: row.goalsAgainst + aiAwayScore,
+            );
+          } else if (row.teamId == fixture.awayTeamId) {
+            return row.copyWith(
+              played: row.played + 1,
+              won: row.won + (aiAwayScore > aiHomeScore ? 1 : 0),
+              drawn: row.drawn + (aiHomeScore == aiAwayScore ? 1 : 0),
+              lost: row.lost + (aiAwayScore < aiHomeScore ? 1 : 0),
+              goalsFor: row.goalsFor + aiAwayScore,
+              goalsAgainst: row.goalsAgainst + aiHomeScore,
+            );
+          }
+          return row;
+        }).toList();
+      }
+    }
 
     // 다음 라운드로
     final nextRound = state!.season.currentRound + 1;
