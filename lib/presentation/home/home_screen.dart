@@ -46,7 +46,7 @@ class HomeScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // 선수 정보 카드
-            _buildPlayerCard(context, pc),
+            _buildPlayerCard(context, pc, season.teams[pc.profile.teamId]),
             const SizedBox(height: 16),
 
             // 다음 경기 카드
@@ -92,7 +92,7 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildPlayerCard(BuildContext context, PlayerCharacter pc) {
+  Widget _buildPlayerCard(BuildContext context, PlayerCharacter pc, [Team? team]) {
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -102,9 +102,23 @@ class HomeScreen extends ConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(
-                  pc.profile.name,
-                  style: Theme.of(context).textTheme.headlineMedium,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      pc.profile.name,
+                      style: Theme.of(context).textTheme.headlineMedium,
+                    ),
+                    if (team != null)
+                      Text(
+                        team.name,
+                        style: const TextStyle(
+                          color: RetroColors.primary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                  ],
                 ),
                 Container(
                   padding: const EdgeInsets.symmetric(
