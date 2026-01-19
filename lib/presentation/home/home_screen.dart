@@ -29,6 +29,45 @@ class HomeScreen extends ConsumerWidget {
       backgroundColor: RetroColors.background,
       appBar: AppBar(
         title: const Text('홈'),
+        leading: PopupMenuButton<String>(
+          icon: const Icon(Icons.menu),
+          onSelected: (value) {
+            if (value == 'lobby') {
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('로비로 이동'),
+                  content: const Text('현재 게임을 저장하고 로비로 이동합니다.'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('취소'),
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        context.go('/');
+                      },
+                      child: const Text('확인'),
+                    ),
+                  ],
+                ),
+              );
+            }
+          },
+          itemBuilder: (context) => [
+            const PopupMenuItem(
+              value: 'lobby',
+              child: Row(
+                children: [
+                  Icon(Icons.home, size: 20),
+                  SizedBox(width: 8),
+                  Text('로비로 이동'),
+                ],
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.mail_outline),
