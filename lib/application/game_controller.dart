@@ -176,6 +176,11 @@ class GameController extends StateNotifier<GameSnapshot?> {
   void startMatch() {
     if (state == null) return;
 
+    // 부상 체크
+    if (state!.pc.status.injury != InjuryStatus.none) {
+      return; // 부상 시 경기 불가
+    }
+
     final nextFixture = state!.nextFixture;
     if (nextFixture == null) return;
 
@@ -542,6 +547,152 @@ class GameController extends StateNotifier<GameSnapshot?> {
 
     state = state!.copyWith(
       gameState: GameState.training,
+      savedAt: DateTime.now(),
+    );
+  }
+
+  /// 경기 관전 (부상 시 팀 경기 시뮬레이션)
+  void spectateMatch() {
+    if (state == null) return;
+
+    final nextFixture = state!.nextFixture;
+    if (nextFixture == null) return;
+
+    final random = Random();
+    final pcTeamId = state!.pc.profile.teamId;
+    final isHome = nextFixture.homeTeamId == pcTeamId;
+
+    // 팀 경기 시뮬레이션 (PC 없이)
+    final homeScore = random.nextInt(4);
+    final awayScore = random.nextInt(4);
+
+    // 순위표 업데이트
+    var updatedStandings = state!.season.standings.map((row) {
+      if (row.teamId == nextFixture.homeTeamId) {
+        return row.copyWith(
+          played: row.played + 1,
+          won: row.won + (homeScore > awayScore ? 1 : 0),
+          drawn: row.drawn + (homeScore == awayScore ? 1 : 0),
+          lost: row.lost + (homeScore < awayScore ? 1 : 0),
+          goalsFor: row.goalsFor + homeScore,
+          goalsAgainst: row.goalsAgainst + awayScore,
+        );
+      } else if (row.teamId == nextFixture.awayTeamId) {
+        return row.copyWith(
+          played: row.played + 1,
+          won: row.won + (awayScore > homeScore ? 1 : 0),
+          drawn: row.drawn + (homeScore == awayScore ? 1 : 0),
+          lost: row.lost + (awayScore < homeScore ? 1 : 0),
+          goalsFor: row.goalsFor + awayScore,
+          goalsAgainst: row.goalsAgainst + homeScore,
+        );
+      }
+      return row;
+    }).toList();
+
+    // 픽스처 업데이트
+    var updatedFixtures = state!.season.fixtures.map((f) {
+      if (f.id == nextFixture.id) {
+        return f.copyWith(
+          isPlayed: true,
+          homeScore: homeScore,
+          awayScore: awayScore,
+        );
+      }
+      return f;
+    }).toList();
+
+    // 다른 AI 경기들도 시뮬레이션
+    final currentRound = state!.season.currentRound;
+    for (var i = 0; i < updatedFixtures.length; i++) {
+      final fixture = updatedFixtures[i];
+      if (fixture.round == currentRound &&
+          !fixture.isPlayed &&
+          fixture.homeTeamId != pcTeamId &&
+          fixture.awayTeamId != pcTeamId) {
+        final aiHomeScore = random.nextInt(4);
+        final aiAwayScore = random.nextInt(4);
+
+        updatedFixtures[i] = fixture.copyWith(
+          isPlayed: true,
+          homeScore: aiHomeScore,
+          awayScore: aiAwayScore,
+        );
+
+        updatedStandings = updatedStandings.map((row) {
+          if (row.teamId == fixture.homeTeamId) {
+            return row.copyWith(
+              played: row.played + 1,
+              won: row.won + (aiHomeScore > aiAwayScore ? 1 : 0),
+              drawn: row.drawn + (aiHomeScore == aiAwayScore ? 1 : 0),
+              lost: row.lost + (aiHomeScore < aiAwayScore ? 1 : 0),
+              goalsFor: row.goalsFor + aiHomeScore,
+              goalsAgainst: row.goalsAgainst + aiAwayScore,
+            );
+          } else if (row.teamId == fixture.awayTeamId) {
+            return row.copyWith(
+              played: row.played + 1,
+              won: row.won + (aiAwayScore > aiHomeScore ? 1 : 0),
+              drawn: row.drawn + (aiHomeScore == aiAwayScore ? 1 : 0),
+              lost: row.lost + (aiAwayScore < aiHomeScore ? 1 : 0),
+              goalsFor: row.goalsFor + aiAwayScore,
+              goalsAgainst: row.goalsAgainst + aiHomeScore,
+            );
+          }
+          return row;
+        }).toList();
+      }
+    }
+
+    // 부상 회복 (1주 감소)
+    var status = state!.pc.status;
+    if (status.injuryWeeksRemaining > 0) {
+      final newWeeks = status.injuryWeeksRemaining - 1;
+      status = status.copyWith(
+        injuryWeeksRemaining: newWeeks,
+        injury: newWeeks <= 0 ? InjuryStatus.none : status.injury,
+      );
+    }
+
+    // 다음 라운드로
+    final nextRound = state!.season.currentRound + 1;
+    final teamResult = isHome
+        ? (homeScore > awayScore ? '승' : homeScore < awayScore ? '패' : '무')
+        : (awayScore > homeScore ? '승' : awayScore < homeScore ? '패' : '무');
+
+    // 관전 결과를 위한 간단한 MatchSession 생성
+    final spectateMatch = MatchSession(
+      id: _uuid.v4(),
+      fixtureId: nextFixture.id,
+      homeTeamId: nextFixture.homeTeamId,
+      awayTeamId: nextFixture.awayTeamId,
+      isHome: isHome,
+      phase: MatchPhase.summary,
+      score: Score(home: homeScore, away: awayScore),
+      highlights: [],
+      rngSeed: 0,
+      log: [
+        LogLine(
+          type: LogType.system,
+          text: '부상으로 인해 벤치에서 경기를 관전했습니다.',
+        ),
+        LogLine(
+          type: LogType.result,
+          text: '경기 결과: ${isHome ? homeScore : awayScore} - ${isHome ? awayScore : homeScore} ($teamResult)',
+        ),
+      ],
+    );
+
+    state = state!.copyWith(
+      gameState: GameState.postMatch,
+      activeMatch: spectateMatch,
+      pc: state!.pc.copyWith(status: status),
+      season: state!.season.copyWith(
+        standings: updatedStandings,
+        fixtures: updatedFixtures,
+        currentRound: nextRound,
+      ),
+      weeklyActionsRemaining: 3,
       savedAt: DateTime.now(),
     );
   }

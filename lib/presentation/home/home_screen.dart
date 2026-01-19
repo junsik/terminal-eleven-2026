@@ -76,12 +76,21 @@ class HomeScreen extends ConsumerWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      ref.read(gameControllerProvider.notifier).startMatch();
-                      context.go('/match');
-                    },
-                    icon: const Icon(Icons.sports_soccer),
-                    label: const Text('다음 경기'),
+                    onPressed: pc.status.injury == InjuryStatus.none
+                        ? () {
+                            ref.read(gameControllerProvider.notifier).startMatch();
+                            context.go('/match');
+                          }
+                        : () {
+                            ref.read(gameControllerProvider.notifier).spectateMatch();
+                            context.go('/summary');
+                          },
+                    icon: Icon(pc.status.injury == InjuryStatus.none 
+                        ? Icons.sports_soccer 
+                        : Icons.visibility),
+                    label: Text(pc.status.injury == InjuryStatus.none 
+                        ? '다음 경기' 
+                        : '경기 결장'),
                   ),
                 ),
               ],
