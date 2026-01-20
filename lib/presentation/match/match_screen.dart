@@ -37,7 +37,7 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final match = ref.watch(activeMatchProvider);
+    final match = ref.watch(engineActiveMatchProvider);
 
     if (match == null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -70,8 +70,9 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
   }
 
   Widget _buildScoreHeader(BuildContext context, MatchSession match) {
-    final homeTeam = ref.watch(seasonProvider)?.teams[match.homeTeamId];
-    final awayTeam = ref.watch(seasonProvider)?.teams[match.awayTeamId];
+    final season = ref.watch(engineSeasonProvider);
+    final homeTeam = season?.getTeam(match.homeTeamId);
+    final awayTeam = season?.getTeam(match.awayTeamId);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -165,7 +166,7 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
         return _ActionButton(
           text: '경기 시작',
           onPressed: () {
-            ref.read(gameControllerProvider.notifier).proceedFromIntro();
+            ref.read(orchestratorProvider).proceedFromIntro();
           },
         );
 
@@ -176,7 +177,7 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
         return _HighlightChoices(
           highlight: highlight,
           onChoice: (command) {
-            ref.read(gameControllerProvider.notifier).processHighlightChoice(command);
+            ref.read(orchestratorProvider).processHighlightChoice(command);
           },
         );
 
@@ -184,7 +185,7 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
         return _ActionButton(
           text: '계속',
           onPressed: () {
-            ref.read(gameControllerProvider.notifier).proceedToNextHighlight();
+            ref.read(orchestratorProvider).proceedToNextHighlight();
           },
         );
 
@@ -192,7 +193,7 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
         return _ActionButton(
           text: '경기 결과 보기',
           onPressed: () {
-            ref.read(gameControllerProvider.notifier).finishMatch();
+            ref.read(orchestratorProvider).finishMatch();
             context.go('/summary');
           },
         );

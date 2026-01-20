@@ -12,12 +12,12 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final pc = ref.watch(playerCharacterProvider);
-    final nextOpponent = ref.watch(nextOpponentProvider);
-    final season = ref.watch(seasonProvider);
-    final weeklyActions = ref.watch(weeklyActionsProvider);
-    final standings = ref.watch(standingsProvider);
-    final pcRank = ref.watch(pcRankProvider);
+    final pc = ref.watch(engineCharacterProvider);
+    final nextOpponent = ref.watch(engineNextOpponentProvider);
+    final season = ref.watch(engineSeasonProvider);
+    final weeklyActions = ref.watch(engineWeeklyActionsProvider);
+    final standings = ref.watch(engineStandingsProvider);
+    final pcRank = ref.watch(enginePcRankProvider);
 
     if (pc == null || season == null) {
       return const Scaffold(
@@ -53,6 +53,8 @@ class HomeScreen extends ConsumerWidget {
                   ],
                 ),
               );
+            } else if (value == 'help') {
+              context.push('/help');
             }
           },
           itemBuilder: (context) => [
@@ -63,6 +65,16 @@ class HomeScreen extends ConsumerWidget {
                   Icon(Icons.home, size: 20),
                   SizedBox(width: 8),
                   Text('로비로 이동'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'help',
+              child: Row(
+                children: [
+                  Icon(Icons.help_outline, size: 20),
+                  SizedBox(width: 8),
+                  Text('게임 도움말'),
                 ],
               ),
             ),
@@ -85,7 +97,7 @@ class HomeScreen extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // 선수 정보 카드
-            _buildPlayerCard(context, pc, season.teams[pc.profile.teamId]),
+            _buildPlayerCard(context, pc, season.getTeam(pc.profile.teamId)),
             const SizedBox(height: 16),
 
             // 다음 경기 카드
@@ -117,18 +129,18 @@ class HomeScreen extends ConsumerWidget {
                   child: ElevatedButton.icon(
                     onPressed: pc.status.injury == InjuryStatus.none
                         ? () {
-                            ref.read(gameControllerProvider.notifier).startMatch();
+                            ref.read(orchestratorProvider).startMatch();
                             context.go('/match');
                           }
                         : () {
-                            ref.read(gameControllerProvider.notifier).spectateMatch();
+                            ref.read(orchestratorProvider).spectateMatchComplete();
                             context.go('/summary');
                           },
-                    icon: Icon(pc.status.injury == InjuryStatus.none 
-                        ? Icons.sports_soccer 
+                    icon: Icon(pc.status.injury == InjuryStatus.none
+                        ? Icons.sports_soccer
                         : Icons.visibility),
-                    label: Text(pc.status.injury == InjuryStatus.none 
-                        ? '다음 경기' 
+                    label: Text(pc.status.injury == InjuryStatus.none
+                        ? '다음 경기'
                         : '경기 결장'),
                   ),
                 ),
@@ -142,71 +154,83 @@ class HomeScreen extends ConsumerWidget {
 
   Widget _buildPlayerCard(BuildContext context, PlayerCharacter pc, [Team? team]) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      pc.profile.name,
-                      style: Theme.of(context).textTheme.headlineMedium,
+      child: InkWell(
+        onTap: () => context.push('/career'),
+        borderRadius: BorderRadius.circular(4),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          pc.profile.name,
+                          style: Theme.of(context).textTheme.headlineMedium,
+                        ),
+                        if (team != null)
+                          Text(
+                            team.name,
+                            style: const TextStyle(
+                              color: RetroColors.primary,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                      ],
                     ),
-                    if (team != null)
-                      Text(
-                        team.name,
-                        style: const TextStyle(
-                          color: RetroColors.primary,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
+                  ),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: RetroColors.primary),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                        child: Text(
+                          'LV.${pc.career.level}',
+                          style: const TextStyle(
+                            color: RetroColors.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                  ],
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
+                      const SizedBox(width: 4),
+                      const Icon(Icons.chevron_right, size: 16),
+                    ],
                   ),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: RetroColors.primary),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    'LV.${pc.career.level}',
-                    style: const TextStyle(
-                      color: RetroColors.primary,
-                      fontWeight: FontWeight.bold,
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '${pc.profile.age}세 | ${_archetypeName(pc.profile.archetype)} | ST',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: RetroColors.textSecondary,
                     ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '${pc.profile.age}세 | ${_archetypeName(pc.profile.archetype)} | ST',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: RetroColors.textSecondary,
-                  ),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _statItem('골', '${pc.career.totalGoals}'),
-                _statItem('도움', '${pc.career.totalAssists}'),
-                _statItem('경기', '${pc.career.matchesPlayed}'),
-                _statItem('평점', pc.career.lastRatings.isEmpty
-                    ? '-'
-                    : pc.career.lastRatings.last.toStringAsFixed(1)),
-              ],
-            ),
-          ],
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _statItem('골', '${pc.career.totalGoals}'),
+                  _statItem('도움', '${pc.career.totalAssists}'),
+                  _statItem('경기', '${pc.career.matchesPlayed}'),
+                  _statItem('평점', pc.career.lastRatings.isEmpty
+                      ? '-'
+                      : pc.career.lastRatings.last.toStringAsFixed(1)),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -219,38 +243,48 @@ class HomeScreen extends ConsumerWidget {
     int round,
   ) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
+      child: InkWell(
+        onTap: () => context.push('/fixtures'),
+        borderRadius: BorderRadius.circular(4),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '다음 경기',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  Row(
+                    children: [
+                      Text(
+                        'R$round',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const SizedBox(width: 4),
+                      const Icon(Icons.chevron_right, size: 16),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              if (opponent != null) ...[
                 Text(
-                  '다음 경기',
-                  style: Theme.of(context).textTheme.titleMedium,
+                  'vs ${opponent.name}',
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
+                const SizedBox(height: 4),
                 Text(
-                  'R$round',
+                  '상대 레이팅: ${opponent.overallRating}',
                   style: Theme.of(context).textTheme.bodySmall,
                 ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (opponent != null) ...[
-              Text(
-                'vs ${opponent.name}',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '상대 레이팅: ${opponent.overallRating}',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ] else
-              const Text('시즌 종료'),
-          ],
+              ] else
+                const Text('시즌 종료'),
+            ],
+          ),
         ),
       ),
     );
@@ -262,15 +296,25 @@ class HomeScreen extends ConsumerWidget {
     int weeklyActions,
   ) {
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '상태',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
+      child: InkWell(
+        onTap: weeklyActions > 0 ? () => context.push('/training') : null,
+        borderRadius: BorderRadius.circular(4),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '상태',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  if (weeklyActions > 0)
+                    const Icon(Icons.chevron_right, size: 16),
+                ],
+              ),
             const SizedBox(height: 12),
             _progressBar('피로', pc.status.fatigue, 100, isInverted: true),
             const SizedBox(height: 8),
@@ -289,6 +333,41 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ],
             ),
+            // 피로 경고
+            if (pc.status.fatigue > 60 && pc.status.injury == InjuryStatus.none) ...[
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: (pc.status.fatigue > 80 ? RetroColors.error : RetroColors.warning).withAlpha(25),
+                  border: Border.all(
+                    color: pc.status.fatigue > 80 ? RetroColors.error : RetroColors.warning,
+                  ),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.warning_amber,
+                      color: pc.status.fatigue > 80 ? RetroColors.error : RetroColors.warning,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        pc.status.fatigue > 80
+                            ? '과로 상태! 성공률 -${((pc.status.fatigue - 80) * 0.6 + 6).toStringAsFixed(0)}%, 부상위험 2배'
+                            : '피로 누적 중. 성공률 -${((pc.status.fatigue - 60) * 0.3).toStringAsFixed(0)}%',
+                        style: TextStyle(
+                          color: pc.status.fatigue > 80 ? RetroColors.error : RetroColors.warning,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             if (pc.status.injury != InjuryStatus.none) ...[
               const SizedBox(height: 8),
               Container(
@@ -310,7 +389,8 @@ class HomeScreen extends ConsumerWidget {
                 ),
               ),
             ],
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -326,14 +406,15 @@ class HomeScreen extends ConsumerWidget {
     final displayStandings = standings.take(5).toList();
 
     return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            InkWell(
-              onTap: () => context.push('/standings'),
-              child: Row(
+      child: InkWell(
+        onTap: () => context.push('/standings'),
+        borderRadius: BorderRadius.circular(4),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
@@ -352,7 +433,6 @@ class HomeScreen extends ConsumerWidget {
                   ),
                 ],
               ),
-            ),
             const SizedBox(height: 12),
             // 헤더
             Row(
@@ -412,7 +492,8 @@ class HomeScreen extends ConsumerWidget {
                 ),
               );
             }),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -475,15 +556,6 @@ class HomeScreen extends ConsumerWidget {
   }
 
   String _archetypeName(PlayerArchetype archetype) {
-    switch (archetype) {
-      case PlayerArchetype.poacher:
-        return '포처';
-      case PlayerArchetype.speedster:
-        return '스피드스터';
-      case PlayerArchetype.pressingForward:
-        return '프레싱 FW';
-      case PlayerArchetype.targetMan:
-        return '타겟맨';
-    }
+    return archetype.label;
   }
 }

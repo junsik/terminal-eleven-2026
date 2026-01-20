@@ -1,29 +1,33 @@
 // 경기 엔진 - 확률 계산 및 결과 해결
 
 import 'dart:math';
+import '../config/balance_config.dart';
 import '../model/models.dart';
 import '../text/commentary.dart';
 
-/// 확률 계산 규칙
+/// 확률 계산 규칙 (Config 기반)
 class ProbabilityRules {
   /// 피로 페널티 계산
   static double fatiguePenalty(int fatigue) {
-    if (fatigue <= 60) return 0;
-    if (fatigue <= 80) return (fatigue - 60) * 0.003;
-    return 0.06 + (fatigue - 80) * 0.006;
+    if (fatigue <= FatigueConfig.lowThreshold) return 0;
+    if (fatigue <= FatigueConfig.highThreshold) {
+      return (fatigue - FatigueConfig.lowThreshold) * FatigueConfig.lowPenaltyRate;
+    }
+    return FatigueConfig.highPenaltyBase +
+        (fatigue - FatigueConfig.highThreshold) * FatigueConfig.highPenaltyRate;
   }
 
   /// 자신감 보너스 계산
   static double confidenceBonus(int confidence) {
-    return confidence * 0.02; // -0.06 ~ +0.06
+    return confidence * MentalConfig.confidenceRate;
   }
 
   /// 모멘텀 보너스 계산
   static double momentumBonus(int momentum, int consecutiveSuccess) {
-    double bonus = momentum * 0.02; // -0.06 ~ +0.06
-    // 연속 성공 시 추가 보너스
-    if (consecutiveSuccess >= 3) {
-      bonus += 0.05; // HOT 상태
+    double bonus = momentum * MentalConfig.momentumRate;
+    // 연속 성공 시 추가 보너스 (HOT 상태)
+    if (consecutiveSuccess >= MentalConfig.hotStreakThreshold) {
+      bonus += MentalConfig.hotStreakBonus;
     }
     return bonus;
   }
@@ -34,7 +38,7 @@ class ProbabilityRules {
     required int fatigue,
     required int opponentPressure,
   }) {
-    return baseRisk * (1 + fatigue / 100) * (1 + opponentPressure * 0.1);
+    return baseRisk * (1 + fatigue / 100) * (1 + opponentPressure * InjuryConfig.pressureRate);
   }
 }
 
@@ -196,7 +200,7 @@ class HighlightResolver {
       final statValue = statsMap[entry.key] ?? 50;
       statBonus += (statValue / 100) * entry.value;
     }
-    p += statBonus * 0.3;
+    p += statBonus * ProbabilityConfig.statBonusRate;
 
     // 피로 페널티
     p -= ProbabilityRules.fatiguePenalty(status.fatigue);
@@ -207,30 +211,30 @@ class HighlightResolver {
     // 모멘텀 보너스
     p += ProbabilityRules.momentumBonus(momentum, consecutiveSuccess);
 
-    // 상대 난이도
-    p -= (opponentRating - 50) / 400;
+    // 상대 난이도 (Config 기반)
+    p -= (opponentRating - OpponentConfig.baseRating) / OpponentConfig.difficultyDivisor;
 
-    // 커맨드별 보정
+    // 커맨드별 보정 (Config 기반)
     if (command == CommandType.safePlay) {
-      p += 0.15; // 안전하게 하면 성공률 상승
+      p += CommandConfig.safePlayBonus;
     } else if (command.isRisky) {
-      p -= 0.10; // 위험한 플레이는 성공률 하락
+      p -= CommandConfig.riskyPlayPenalty;
     }
 
     // 클러치 상황 긴장감
     if (isClutch) {
       // 침착성이 낮으면 더 큰 페널티
-      if (stats.composure < 50) {
-        p -= 0.10;
+      if (stats.composure < CommandConfig.lowComposureThreshold) {
+        p -= CommandConfig.lowComposurePenalty;
       }
     }
 
     // 부상 상태 페널티
     if (status.injury != InjuryStatus.none) {
-      p -= 0.1;
+      p -= CommandConfig.injuryPenalty;
     }
 
-    return p.clamp(0.05, 0.95);
+    return p.clamp(ProbabilityConfig.minProbability, ProbabilityConfig.maxProbability);
   }
 
   /// 결과 생성
@@ -242,7 +246,7 @@ class HighlightResolver {
     required PlayerStatus status,
   }) {
     double ratingChange = 0;
-    int fatigueChange = 3;
+    int fatigueChange = RewardConfig.baseFatigueGain;
     int confidenceChange = 0;
     bool isGoal = false;
     bool isAssist = false;
@@ -261,49 +265,49 @@ class HighlightResolver {
         case HighlightType.setPieceRebound:
           if (command == CommandType.shoot) {
             isGoal = true;
-            ratingChange = 8.0 * multiplier;
-            confidenceChange = 1;
+            ratingChange = RewardConfig.goalRating * multiplier;
+            confidenceChange = ConfidenceConfig.goalConfidence;
           } else if (command == CommandType.pass) {
-            isAssist = _random.nextDouble() < 0.6;
-            ratingChange = isAssist ? 5.0 : 3.0;
+            isAssist = _random.nextDouble() < RewardConfig.assistProbability;
+            ratingChange = isAssist ? RewardConfig.assistRating : RewardConfig.goodSuccessRating;
           } else {
-            ratingChange = 2.0;
+            ratingChange = RewardConfig.normalSuccessRating;
           }
           break;
 
         case HighlightType.penaltyKick:
           isGoal = true;
-          ratingChange = 8.0 * multiplier; // 16점!
-          confidenceChange = 2;
-          fatigueChange = 1;
+          ratingChange = RewardConfig.goalRating * multiplier;
+          confidenceChange = ConfidenceConfig.penaltySuccessConfidence;
+          fatigueChange = RewardConfig.penaltyFatigueGain;
           break;
 
         case HighlightType.clutchChance:
           if (command == CommandType.shoot) {
             isGoal = true;
-            ratingChange = 8.0 * multiplier; // 20점!
-            confidenceChange = 3; // 최대 자신감
+            ratingChange = RewardConfig.goalRating * multiplier;
+            confidenceChange = ConfidenceConfig.clutchGoalConfidence;
           } else if (command == CommandType.pass) {
-            isAssist = _random.nextDouble() < 0.7;
-            ratingChange = isAssist ? 10.0 : 5.0;
-            confidenceChange = 2;
+            isAssist = _random.nextDouble() < RewardConfig.clutchAssistProbability;
+            ratingChange = isAssist ? 10.0 : RewardConfig.assistRating;
+            confidenceChange = ConfidenceConfig.clutchAssistConfidence;
           } else {
-            ratingChange = 3.0;
+            ratingChange = RewardConfig.goodSuccessRating;
           }
           break;
 
         case HighlightType.runInBehind:
         case HighlightType.quickCounter:
           if (command == CommandType.dribble) {
-            ratingChange = 3.0;
+            ratingChange = RewardConfig.goodSuccessRating;
           } else {
-            ratingChange = 2.0;
+            ratingChange = RewardConfig.normalSuccessRating;
           }
           break;
 
         case HighlightType.pressing:
-          ratingChange = 2.0;
-          fatigueChange = 5;
+          ratingChange = RewardConfig.normalSuccessRating;
+          fatigueChange = RewardConfig.pressingFatigueGain;
           break;
 
         default:
@@ -314,36 +318,36 @@ class HighlightResolver {
       switch (event.type) {
         case HighlightType.oneOnOne:
         case HighlightType.setPieceRebound:
-          ratingChange = -4.0;
-          confidenceChange = -1;
+          ratingChange = RewardConfig.bigChanceFailurePenalty;
+          confidenceChange = ConfidenceConfig.bigChanceFailureConfidence;
           break;
 
         case HighlightType.penaltyKick:
-          ratingChange = -8.0; // 실축은 큰 타격
-          confidenceChange = -2;
+          ratingChange = RewardConfig.penaltyMissPenalty;
+          confidenceChange = ConfidenceConfig.penaltyMissConfidence;
           break;
 
         case HighlightType.clutchChance:
-          ratingChange = -6.0;
-          confidenceChange = -2;
+          ratingChange = RewardConfig.clutchMissPenalty;
+          confidenceChange = ConfidenceConfig.clutchMissConfidence;
           break;
 
         case HighlightType.pressing:
         case HighlightType.looseBall:
           if (command == CommandType.tackle) {
-            if (_random.nextDouble() < 0.25) {
+            if (_random.nextDouble() < RewardConfig.yellowCardProbability) {
               isYellowCard = true;
-              ratingChange = -3.0;
+              ratingChange = RewardConfig.yellowCardPenalty;
             } else {
-              ratingChange = -2.0;
+              ratingChange = RewardConfig.failurePenalty;
             }
           } else {
-            ratingChange = -2.0;
+            ratingChange = RewardConfig.failurePenalty;
           }
           break;
 
         default:
-          ratingChange = -2.0;
+          ratingChange = RewardConfig.failurePenalty;
       }
     }
 
@@ -357,9 +361,9 @@ class HighlightResolver {
       isInjury = _random.nextDouble() < injuryProb;
     }
 
-    // 피로도에 따른 추가 피로
-    if (status.fatigue > 70) {
-      fatigueChange += 2;
+    // 피로도에 따른 추가 피로 (Config 기반)
+    if (status.fatigue > FatigueConfig.extraFatigueThreshold) {
+      fatigueChange += FatigueConfig.extraFatigueAmount;
     }
 
     // 새 코멘터리 시스템 사용

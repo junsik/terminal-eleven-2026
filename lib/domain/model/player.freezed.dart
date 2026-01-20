@@ -26,6 +26,7 @@ mixin _$PlayerProfile {
   int get age => throw _privateConstructorUsedError;
   PlayerArchetype get archetype => throw _privateConstructorUsedError;
   String get teamId => throw _privateConstructorUsedError;
+  PlayerPosition get position => throw _privateConstructorUsedError;
 
   /// Serializes this PlayerProfile to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -50,6 +51,7 @@ abstract class $PlayerProfileCopyWith<$Res> {
     int age,
     PlayerArchetype archetype,
     String teamId,
+    PlayerPosition position,
   });
 }
 
@@ -73,6 +75,7 @@ class _$PlayerProfileCopyWithImpl<$Res, $Val extends PlayerProfile>
     Object? age = null,
     Object? archetype = null,
     Object? teamId = null,
+    Object? position = null,
   }) {
     return _then(
       _value.copyWith(
@@ -96,6 +99,10 @@ class _$PlayerProfileCopyWithImpl<$Res, $Val extends PlayerProfile>
                 ? _value.teamId
                 : teamId // ignore: cast_nullable_to_non_nullable
                       as String,
+            position: null == position
+                ? _value.position
+                : position // ignore: cast_nullable_to_non_nullable
+                      as PlayerPosition,
           )
           as $Val,
     );
@@ -117,6 +124,7 @@ abstract class _$$PlayerProfileImplCopyWith<$Res>
     int age,
     PlayerArchetype archetype,
     String teamId,
+    PlayerPosition position,
   });
 }
 
@@ -139,6 +147,7 @@ class __$$PlayerProfileImplCopyWithImpl<$Res>
     Object? age = null,
     Object? archetype = null,
     Object? teamId = null,
+    Object? position = null,
   }) {
     return _then(
       _$PlayerProfileImpl(
@@ -162,6 +171,10 @@ class __$$PlayerProfileImplCopyWithImpl<$Res>
             ? _value.teamId
             : teamId // ignore: cast_nullable_to_non_nullable
                   as String,
+        position: null == position
+            ? _value.position
+            : position // ignore: cast_nullable_to_non_nullable
+                  as PlayerPosition,
       ),
     );
   }
@@ -176,6 +189,7 @@ class _$PlayerProfileImpl implements _PlayerProfile {
     required this.age,
     required this.archetype,
     required this.teamId,
+    required this.position,
   });
 
   factory _$PlayerProfileImpl.fromJson(Map<String, dynamic> json) =>
@@ -191,10 +205,12 @@ class _$PlayerProfileImpl implements _PlayerProfile {
   final PlayerArchetype archetype;
   @override
   final String teamId;
+  @override
+  final PlayerPosition position;
 
   @override
   String toString() {
-    return 'PlayerProfile(id: $id, name: $name, age: $age, archetype: $archetype, teamId: $teamId)';
+    return 'PlayerProfile(id: $id, name: $name, age: $age, archetype: $archetype, teamId: $teamId, position: $position)';
   }
 
   @override
@@ -207,13 +223,15 @@ class _$PlayerProfileImpl implements _PlayerProfile {
             (identical(other.age, age) || other.age == age) &&
             (identical(other.archetype, archetype) ||
                 other.archetype == archetype) &&
-            (identical(other.teamId, teamId) || other.teamId == teamId));
+            (identical(other.teamId, teamId) || other.teamId == teamId) &&
+            (identical(other.position, position) ||
+                other.position == position));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
   int get hashCode =>
-      Object.hash(runtimeType, id, name, age, archetype, teamId);
+      Object.hash(runtimeType, id, name, age, archetype, teamId, position);
 
   /// Create a copy of PlayerProfile
   /// with the given fields replaced by the non-null parameter values.
@@ -236,6 +254,7 @@ abstract class _PlayerProfile implements PlayerProfile {
     required final int age,
     required final PlayerArchetype archetype,
     required final String teamId,
+    required final PlayerPosition position,
   }) = _$PlayerProfileImpl;
 
   factory _PlayerProfile.fromJson(Map<String, dynamic> json) =
@@ -251,6 +270,8 @@ abstract class _PlayerProfile implements PlayerProfile {
   PlayerArchetype get archetype;
   @override
   String get teamId;
+  @override
+  PlayerPosition get position;
 
   /// Create a copy of PlayerProfile
   /// with the given fields replaced by the non-null parameter values.
@@ -272,7 +293,8 @@ mixin _$PlayerStats {
   int get ballControl => throw _privateConstructorUsedError; // 볼 컨트롤
   int get positioning => throw _privateConstructorUsedError; // 위치 선정
   int get stamina => throw _privateConstructorUsedError; // 체력
-  int get composure => throw _privateConstructorUsedError;
+  int get composure => throw _privateConstructorUsedError; // 침착성
+  int get defending => throw _privateConstructorUsedError;
 
   /// Serializes this PlayerStats to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -299,6 +321,7 @@ abstract class $PlayerStatsCopyWith<$Res> {
     int positioning,
     int stamina,
     int composure,
+    int defending,
   });
 }
 
@@ -324,6 +347,7 @@ class _$PlayerStatsCopyWithImpl<$Res, $Val extends PlayerStats>
     Object? positioning = null,
     Object? stamina = null,
     Object? composure = null,
+    Object? defending = null,
   }) {
     return _then(
       _value.copyWith(
@@ -355,6 +379,10 @@ class _$PlayerStatsCopyWithImpl<$Res, $Val extends PlayerStats>
                 ? _value.composure
                 : composure // ignore: cast_nullable_to_non_nullable
                       as int,
+            defending: null == defending
+                ? _value.defending
+                : defending // ignore: cast_nullable_to_non_nullable
+                      as int,
           )
           as $Val,
     );
@@ -378,6 +406,7 @@ abstract class _$$PlayerStatsImplCopyWith<$Res>
     int positioning,
     int stamina,
     int composure,
+    int defending,
   });
 }
 
@@ -402,6 +431,7 @@ class __$$PlayerStatsImplCopyWithImpl<$Res>
     Object? positioning = null,
     Object? stamina = null,
     Object? composure = null,
+    Object? defending = null,
   }) {
     return _then(
       _$PlayerStatsImpl(
@@ -433,6 +463,10 @@ class __$$PlayerStatsImplCopyWithImpl<$Res>
             ? _value.composure
             : composure // ignore: cast_nullable_to_non_nullable
                   as int,
+        defending: null == defending
+            ? _value.defending
+            : defending // ignore: cast_nullable_to_non_nullable
+                  as int,
       ),
     );
   }
@@ -449,6 +483,7 @@ class _$PlayerStatsImpl implements _PlayerStats {
     this.positioning = 50,
     this.stamina = 50,
     this.composure = 50,
+    this.defending = 50,
   });
 
   factory _$PlayerStatsImpl.fromJson(Map<String, dynamic> json) =>
@@ -481,10 +516,14 @@ class _$PlayerStatsImpl implements _PlayerStats {
   @override
   @JsonKey()
   final int composure;
+  // 침착성
+  @override
+  @JsonKey()
+  final int defending;
 
   @override
   String toString() {
-    return 'PlayerStats(pace: $pace, shooting: $shooting, passing: $passing, ballControl: $ballControl, positioning: $positioning, stamina: $stamina, composure: $composure)';
+    return 'PlayerStats(pace: $pace, shooting: $shooting, passing: $passing, ballControl: $ballControl, positioning: $positioning, stamina: $stamina, composure: $composure, defending: $defending)';
   }
 
   @override
@@ -502,7 +541,9 @@ class _$PlayerStatsImpl implements _PlayerStats {
                 other.positioning == positioning) &&
             (identical(other.stamina, stamina) || other.stamina == stamina) &&
             (identical(other.composure, composure) ||
-                other.composure == composure));
+                other.composure == composure) &&
+            (identical(other.defending, defending) ||
+                other.defending == defending));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -516,6 +557,7 @@ class _$PlayerStatsImpl implements _PlayerStats {
     positioning,
     stamina,
     composure,
+    defending,
   );
 
   /// Create a copy of PlayerStats
@@ -541,6 +583,7 @@ abstract class _PlayerStats implements PlayerStats {
     final int positioning,
     final int stamina,
     final int composure,
+    final int defending,
   }) = _$PlayerStatsImpl;
 
   factory _PlayerStats.fromJson(Map<String, dynamic> json) =
@@ -559,7 +602,9 @@ abstract class _PlayerStats implements PlayerStats {
   @override
   int get stamina; // 체력
   @override
-  int get composure;
+  int get composure; // 침착성
+  @override
+  int get defending;
 
   /// Create a copy of PlayerStats
   /// with the given fields replaced by the non-null parameter values.

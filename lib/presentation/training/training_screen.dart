@@ -12,8 +12,8 @@ class TrainingScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final pc = ref.watch(playerCharacterProvider);
-    final weeklyActions = ref.watch(weeklyActionsProvider);
+    final pc = ref.watch(engineCharacterProvider);
+    final weeklyActions = ref.watch(engineWeeklyActionsProvider);
 
     if (pc == null) {
       return const Scaffold(
@@ -72,8 +72,8 @@ class TrainingScreen extends ConsumerWidget {
                     enabled: canTrain,
                     onTap: canTrain
                         ? () {
-                            ref.read(gameControllerProvider.notifier)
-                                .applyTraining(training);
+                            ref.read(orchestratorProvider)
+                                .executeTraining(training);
                             ScaffoldMessenger.of(context).showSnackBar(
                               SnackBar(
                                 content: Text('${training.displayName} 완료!'),

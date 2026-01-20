@@ -13,6 +13,7 @@ _$PlayerProfileImpl _$$PlayerProfileImplFromJson(Map<String, dynamic> json) =>
       age: (json['age'] as num).toInt(),
       archetype: $enumDecode(_$PlayerArchetypeEnumMap, json['archetype']),
       teamId: json['teamId'] as String,
+      position: $enumDecode(_$PlayerPositionEnumMap, json['position']),
     );
 
 Map<String, dynamic> _$$PlayerProfileImplToJson(_$PlayerProfileImpl instance) =>
@@ -22,6 +23,7 @@ Map<String, dynamic> _$$PlayerProfileImplToJson(_$PlayerProfileImpl instance) =>
       'age': instance.age,
       'archetype': _$PlayerArchetypeEnumMap[instance.archetype]!,
       'teamId': instance.teamId,
+      'position': _$PlayerPositionEnumMap[instance.position]!,
     };
 
 const _$PlayerArchetypeEnumMap = {
@@ -29,6 +31,19 @@ const _$PlayerArchetypeEnumMap = {
   PlayerArchetype.speedster: 'speedster',
   PlayerArchetype.pressingForward: 'pressingForward',
   PlayerArchetype.targetMan: 'targetMan',
+  PlayerArchetype.creator: 'creator',
+  PlayerArchetype.boxToBox: 'boxToBox',
+  PlayerArchetype.ballWinning: 'ballWinning',
+  PlayerArchetype.stopper: 'stopper',
+  PlayerArchetype.sweeper: 'sweeper',
+  PlayerArchetype.fullBack: 'fullBack',
+};
+
+const _$PlayerPositionEnumMap = {
+  PlayerPosition.forward: 'forward',
+  PlayerPosition.midfielder: 'midfielder',
+  PlayerPosition.defender: 'defender',
+  PlayerPosition.goalkeeper: 'goalkeeper',
 };
 
 _$PlayerStatsImpl _$$PlayerStatsImplFromJson(Map<String, dynamic> json) =>
@@ -40,6 +55,7 @@ _$PlayerStatsImpl _$$PlayerStatsImplFromJson(Map<String, dynamic> json) =>
       positioning: (json['positioning'] as num?)?.toInt() ?? 50,
       stamina: (json['stamina'] as num?)?.toInt() ?? 50,
       composure: (json['composure'] as num?)?.toInt() ?? 50,
+      defending: (json['defending'] as num?)?.toInt() ?? 50,
     );
 
 Map<String, dynamic> _$$PlayerStatsImplToJson(_$PlayerStatsImpl instance) =>
@@ -51,6 +67,7 @@ Map<String, dynamic> _$$PlayerStatsImplToJson(_$PlayerStatsImpl instance) =>
       'positioning': instance.positioning,
       'stamina': instance.stamina,
       'composure': instance.composure,
+      'defending': instance.defending,
     };
 
 _$PlayerStatusImpl _$$PlayerStatusImplFromJson(Map<String, dynamic> json) =>

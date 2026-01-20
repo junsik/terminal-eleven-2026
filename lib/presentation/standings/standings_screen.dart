@@ -62,8 +62,8 @@ class _StandingsScreenState extends ConsumerState<StandingsScreen>
 class _TeamStandingsTab extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final standings = ref.watch(standingsProvider);
-    final pcTeamId = ref.watch(playerCharacterProvider)?.profile.teamId;
+    final standings = ref.watch(engineStandingsProvider);
+    final pcTeamId = ref.watch(engineCharacterProvider)?.profile.teamId;
 
     if (standings.isEmpty) {
       return const Center(child: Text('순위 정보가 없습니다.'));
@@ -180,9 +180,9 @@ class _IndividualStandingsTabState extends ConsumerState<_IndividualStandingsTab
 
   @override
   Widget build(BuildContext context) {
-    final leagueStats = ref.watch(leagueStatsProvider);
-    final pc = ref.watch(playerCharacterProvider);
-    final season = ref.watch(seasonProvider);
+    final leagueStats = ref.watch(engineLeagueStatsProvider);
+    final pc = ref.watch(engineCharacterProvider);
+    final season = ref.watch(engineSeasonProvider);
 
     if (leagueStats == null || pc == null || season == null) {
       return const Center(child: Text('통계 정보가 없습니다.'));
@@ -223,7 +223,7 @@ class _IndividualStandingsTabState extends ConsumerState<_IndividualStandingsTab
         getValue = (p) => '${p.assists}';
         break;
       default:
-        final qualified = allPlayers.where((p) => p.matchesPlayed >= 3).toList();
+        final qualified = allPlayers.where((p) => p.matchesPlayed >= 1).toList();
         ranking = [...qualified]..sort((a, b) => b.avgRating.compareTo(a.avgRating));
         title = '⭐ 평점 순위';
         // 평점
@@ -262,7 +262,7 @@ class _IndividualStandingsTabState extends ConsumerState<_IndividualStandingsTab
             itemBuilder: (context, index) {
               final player = ranking[index];
               final isPC = player.id == pc.profile.id;
-              final teamName = season.teams[player.teamId]?.name ?? '-';
+              final teamName = season.getTeam(player.teamId)?.name ?? '-';
 
               return Container(
                 padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),

@@ -41,7 +41,7 @@ class InboxScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final pc = ref.watch(playerCharacterProvider);
+    final pc = ref.watch(engineCharacterProvider);
 
     if (pc == null) {
       return const Scaffold(

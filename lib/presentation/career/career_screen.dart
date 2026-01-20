@@ -12,13 +12,16 @@ class CareerScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final pc = ref.watch(playerCharacterProvider);
+    final pc = ref.watch(engineCharacterProvider);
+    final season = ref.watch(engineSeasonProvider);
 
     if (pc == null) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
+
+    final team = season?.getTeam(pc.profile.teamId);
 
     return Scaffold(
       backgroundColor: RetroColors.background,
@@ -58,6 +61,16 @@ class CareerScreen extends ConsumerWidget {
                       pc.profile.name,
                       style: Theme.of(context).textTheme.headlineMedium,
                     ),
+                    if (team != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        team.name,
+                        style: const TextStyle(
+                          color: RetroColors.primary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 4),
                     Text(
                       '${pc.profile.age}세 | ${_archetypeName(pc.profile.archetype)} | 스트라이커',
@@ -315,16 +328,7 @@ class CareerScreen extends ConsumerWidget {
   }
 
   String _archetypeName(PlayerArchetype archetype) {
-    switch (archetype) {
-      case PlayerArchetype.poacher:
-        return '포처';
-      case PlayerArchetype.speedster:
-        return '스피드스터';
-      case PlayerArchetype.pressingForward:
-        return '프레싱 FW';
-      case PlayerArchetype.targetMan:
-        return '타겟맨';
-    }
+    return archetype.label;
   }
 
   String _confidenceText(int confidence) {

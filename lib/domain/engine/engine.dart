@@ -3,5 +3,4 @@ library;
 
 export 'highlight_generator.dart';
 export 'resolver.dart';
-export 'auto_play_bot.dart';
 export 'league_simulator.dart';

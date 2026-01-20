@@ -12,9 +12,9 @@ class SummaryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final match = ref.watch(activeMatchProvider);
-    final pc = ref.watch(playerCharacterProvider);
-    final season = ref.watch(seasonProvider);
+    final match = ref.watch(engineActiveMatchProvider);
+    final pc = ref.watch(engineCharacterProvider);
+    final season = ref.watch(engineSeasonProvider);
 
     if (match == null || pc == null) {
       return const Scaffold(
@@ -22,8 +22,8 @@ class SummaryScreen extends ConsumerWidget {
       );
     }
 
-    final homeTeam = season?.teams[match.homeTeamId];
-    final awayTeam = season?.teams[match.awayTeamId];
+    final homeTeam = season?.getTeam(match.homeTeamId);
+    final awayTeam = season?.getTeam(match.awayTeamId);
     final rating = match.ratingAccumulator.finalRating;
 
     return Scaffold(
@@ -196,7 +196,7 @@ class SummaryScreen extends ConsumerWidget {
 
             ElevatedButton(
               onPressed: () {
-                ref.read(gameControllerProvider.notifier).returnToHome();
+                ref.read(orchestratorProvider).returnToHome();
                 context.go('/home');
               },
               child: const Text('홈으로'),

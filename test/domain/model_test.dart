@@ -9,6 +9,7 @@ void main() {
       final player = PlayerCharacter.create(
         id: 'test-id',
         name: '테스트선수',
+        position: PlayerPosition.forward,
         archetype: PlayerArchetype.poacher,
         teamId: 'team_1',
       );
@@ -25,6 +26,7 @@ void main() {
       final poacher = PlayerCharacter.create(
         id: '1',
         name: 'Poacher',
+        position: PlayerPosition.forward,
         archetype: PlayerArchetype.poacher,
         teamId: 'team_1',
       );
@@ -32,6 +34,7 @@ void main() {
       final speedster = PlayerCharacter.create(
         id: '2',
         name: 'Speedster',
+        position: PlayerPosition.forward,
         archetype: PlayerArchetype.speedster,
         teamId: 'team_1',
       );
@@ -165,6 +168,7 @@ void main() {
       final pc = PlayerCharacter.create(
         id: 'test',
         name: 'Test',
+        position: PlayerPosition.forward,
         archetype: PlayerArchetype.poacher,
         teamId: 'team_1',
       );

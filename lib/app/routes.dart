@@ -11,6 +11,11 @@ import '../presentation/career/career_screen.dart';
 import '../presentation/lobby/lobby_screen.dart';
 import '../presentation/inbox/inbox_screen.dart';
 import '../presentation/standings/standings_screen.dart';
+import '../presentation/fixtures/fixtures_screen.dart';
+import '../presentation/new_game/character_creation_screen.dart';
+import '../presentation/new_game/team_selection_screen.dart';
+import '../presentation/help/help_screen.dart';
+import '../domain/model/models.dart';
 
 /// GoRouter Provider
 final routerProvider = Provider<GoRouter>((ref) {
@@ -57,13 +62,43 @@ final routerProvider = Provider<GoRouter>((ref) {
         name: 'standings',
         builder: (context, state) => const StandingsScreen(),
       ),
+      GoRoute(
+        path: '/fixtures',
+        name: 'fixtures',
+        builder: (context, state) => const FixturesScreen(),
+      ),
+      GoRoute(
+        path: '/help',
+        name: 'help',
+        builder: (context, state) => const HelpScreen(),
+      ),
+      GoRoute(
+        path: '/new_game/character',
+        name: 'new_game_character',
+        builder: (context, state) => const CharacterCreationScreen(),
+      ),
+      GoRoute(
+        path: '/new_game/team',
+        name: 'new_game_team',
+        builder: (context, state) {
+          final extras = state.extra as Map<String, dynamic>;
+          return TeamSelectionScreen(
+            playerName: extras['name'] as String,
+            position: extras['position'] as PlayerPosition,
+            archetype: extras['archetype'] as PlayerArchetype,
+          );
+        },
+      ),
     ],
     redirect: (context, state) {
       // 게임 상태에 따른 리다이렉트
       final container = ProviderScope.containerOf(context, listen: false);
-      final gameState = container.read(gameStateProvider);
+      final gameState = container.read(engineStateProvider);
 
-      if (gameState == null && state.matchedLocation != '/') {
+      if (gameState == null &&
+          state.matchedLocation != '/' &&
+          !state.matchedLocation.startsWith('/new_game') &&
+          state.matchedLocation != '/help') {
         return '/';
       }
 
