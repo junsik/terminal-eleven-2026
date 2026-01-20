@@ -103,6 +103,15 @@ class _LobbyScreenState extends ConsumerState<LobbyScreen> {
                     ),
                 textAlign: TextAlign.center,
               ),
+              const SizedBox(height: 12),
+              Text(
+                'Dedicated to future developer Hyunwoo',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: RetroColors.primary.withAlpha(150),
+                      fontStyle: FontStyle.italic,
+                    ),
+                textAlign: TextAlign.center,
+              ),
               const SizedBox(height: 64),
 
               // 이어하기 버튼 (저장된 게임이 있을 때만)

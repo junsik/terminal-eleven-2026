@@ -37,6 +37,54 @@ class _CharacterCreationScreenState extends State<CharacterCreationScreen> {
       return;
     }
 
+    // 이스터 에그: 현우
+    if (_nameController.text.trim().toLowerCase() == 'hyunwoo' ||
+        _nameController.text.trim() == '현우') {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          backgroundColor: RetroColors.surface,
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+              side: const BorderSide(color: RetroColors.primary, width: 2)),
+          title: const Row(
+            children: [
+              Icon(Icons.auto_awesome, color: RetroColors.primary),
+              SizedBox(width: 8),
+              Text('히든 메시지 발견!',
+                  style: TextStyle(
+                      color: RetroColors.primary, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: const Text(
+            '✨ 미래의 개발자 현우!\n특별한 재능이 깨어납니다! ✨',
+            style: TextStyle(
+                fontSize: 18,
+                color: Colors.white,
+                fontWeight: FontWeight.bold),
+            textAlign: TextAlign.center,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                _proceedToNext();
+              },
+              child: const Text('확인',
+                  style: TextStyle(
+                      color: RetroColors.primary, fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    _proceedToNext();
+  }
+
+  void _proceedToNext() {
     context.push(
       '/new_game/team',
       extra: {

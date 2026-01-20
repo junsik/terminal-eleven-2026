@@ -27,9 +27,33 @@ class LeagueEngineV2 extends GameEngine<LeagueAction> {
       SimulateAIMatches(:final round) => _simulateAIMatches(state, round, seed),
       AdvanceRound() => _advanceRound(state),
       ResetWeeklyActions() => _resetWeeklyActions(state),
-      UpdateFixture() => state, // TODO: 구현 필요
+      UpdateFixture(:final fixtureId, :final homeScore, :final awayScore) =>
+          _updateFixture(state, fixtureId, homeScore, awayScore),
       RecordPCMatchResult() => state, // TODO: 구현 필요
     };
+  }
+
+  /// 픽스처 결과 업데이트 (강제)
+  GameState _updateFixture(
+    GameState state,
+    String fixtureId,
+    int homeScore,
+    int awayScore,
+  ) {
+    final updatedFixtures = state.season.fixtures.map((f) {
+      if (f.id == fixtureId) {
+        return f.copyWith(
+          isPlayed: true,
+          homeScore: homeScore,
+          awayScore: awayScore,
+        );
+      }
+      return f;
+    }).toList();
+
+    return state.copyWith(
+      season: state.season.copyWith(fixtures: updatedFixtures),
+    );
   }
 
   /// 순위표 업데이트 (단일 경기)

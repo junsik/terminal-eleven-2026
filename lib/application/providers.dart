@@ -6,6 +6,7 @@
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../domain/model/models.dart';
+import '../domain/model/training_event.dart';
 import '../domain/state/game_state.dart' as engine;
 import 'orchestrator.dart';
 
@@ -126,4 +127,9 @@ final engineCurrentScreenProvider = Provider<engine.UIScreen>((ref) {
 /// 리그 스탯 Provider
 final engineLeagueStatsProvider = Provider<LeagueStats?>((ref) {
   return ref.watch(engineSeasonProvider)?.leagueStats;
+});
+
+/// 마지막 훈련 이벤트 Provider
+final engineLastTrainingEventProvider = Provider<TrainingEventResult?>((ref) {
+  return ref.watch(enginePlayerProvider)?.lastTrainingEvent;
 });

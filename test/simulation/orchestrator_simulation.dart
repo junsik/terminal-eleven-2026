@@ -56,9 +56,26 @@ void main() {
           if (match.phase == MatchPhase.intro) {
             orchestrator.proceedFromIntro();
           } else if (match.phase == MatchPhase.highlightPresent) {
-             // Blindly choose 'Shoot' (assumes it's always an option or handled gracefully)
-             // Ideally we should check match.currentHighlight.choices
-             orchestrator.processHighlightChoice(CommandType.shoot);
+             // Deterministic check: shout every 10 minutes if not shouted
+             if (match.lastShoutIndex != match.currentHighlightIndex && match.currentHighlight!.minute % 10 == 0) {
+               print('🗣️ Shouting Encourage!');
+               orchestrator.executeTacticalShout(CommandType.shoutEncourage);
+               // Note: phase stays highlightPresent, loop continues
+               continue;
+             }
+             
+             final choices = match.currentHighlight!.choices;
+             // Try Panenka if available to test new feature
+             if (choices.contains('panenka')) {
+               print('👉 Attempting Panenka!');
+               orchestrator.processHighlightChoice(CommandType.panenka);
+             } else if (choices.contains('shoot')) {
+               orchestrator.processHighlightChoice(CommandType.shoot);
+             } else if (choices.isNotEmpty) {
+               // Fallback to first available
+               final cmd = commandTypeFromString(choices.first);
+               if (cmd != null) orchestrator.processHighlightChoice(cmd);
+             }
           } else if (match.phase == MatchPhase.highlightResult) {
             orchestrator.proceedToNextHighlight();
           } else if (match.phase == MatchPhase.fullTime) {
