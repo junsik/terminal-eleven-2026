@@ -25,6 +25,7 @@ class SummaryScreen extends ConsumerWidget {
     final homeTeam = season?.getTeam(match.homeTeamId);
     final awayTeam = season?.getTeam(match.awayTeamId);
     final rating = match.ratingAccumulator.finalRating;
+    final didPlay = match.highlights.isNotEmpty; // 결장 여부 체크
 
     return Scaffold(
       backgroundColor: RetroColors.background,
@@ -111,88 +112,121 @@ class SummaryScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 16),
 
-            // 평점
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Text(
-                      '경기 평점',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      rating.toStringAsFixed(1),
-                      style: TextStyle(
-                        fontSize: 64,
-                        fontWeight: FontWeight.bold,
-                        color: _getRatingColor(rating),
+            // 결장 시 메시지
+            if (!didPlay) ...[
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      const Icon(
+                        Icons.healing,
+                        size: 48,
+                        color: RetroColors.warning,
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _getRatingText(rating),
-                      style: TextStyle(
-                        color: _getRatingColor(rating),
+                      const SizedBox(height: 16),
+                      Text(
+                        '경기 결장',
+                        style: Theme.of(context).textTheme.titleMedium,
                       ),
-                    ),
-                  ],
+                      const SizedBox(height: 8),
+                      const Text(
+                        '부상으로 인해 벤치에서 경기를 관전했습니다.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: RetroColors.textSecondary),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 24),
+            ],
 
-            // 경기 스탯
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '경기 활약',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _statItem('골', match.ratingAccumulator.goals),
-                        _statItem('어시스트', match.ratingAccumulator.assists),
-                        _statItem('유효슈팅', match.ratingAccumulator.shotsOnTarget),
-                        _statItem('키패스', match.ratingAccumulator.keyPasses),
-                      ],
-                    ),
-                  ],
+            // 출전 시에만 평점/스탯 표시
+            if (didPlay) ...[
+              // 평점
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Text(
+                        '경기 평점',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        rating.toStringAsFixed(1),
+                        style: TextStyle(
+                          fontSize: 64,
+                          fontWeight: FontWeight.bold,
+                          color: _getRatingColor(rating),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        _getRatingText(rating),
+                        style: TextStyle(
+                          color: _getRatingColor(rating),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
+              const SizedBox(height: 16),
 
-            // 성장
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '커리어 성장',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 16),
-                    _growthItem('XP 획득', '+${(rating * 10).toInt()}'),
-                    _growthItem(
-                      '신뢰도',
-                      '${((rating - 6.0) * 4).toInt() >= 0 ? '+' : ''}${((rating - 6.0) * 4).toInt()}',
-                    ),
-                    _growthItem('레벨', 'Lv.${pc.career.level}'),
-                  ],
+              // 경기 스탯
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '경기 활약',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          _statItem('골', match.ratingAccumulator.goals),
+                          _statItem('어시스트', match.ratingAccumulator.assists),
+                          _statItem('유효슈팅', match.ratingAccumulator.shotsOnTarget),
+                          _statItem('키패스', match.ratingAccumulator.keyPasses),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
+              const SizedBox(height: 16),
+
+              // 성장
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '커리어 성장',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: 16),
+                      _growthItem('XP 획득', '+${(rating * 10).toInt()}'),
+                      _growthItem(
+                        '신뢰도',
+                        '${((rating - 6.0) * 4).toInt() >= 0 ? '+' : ''}${((rating - 6.0) * 4).toInt()}',
+                      ),
+                      _growthItem('레벨', 'Lv.${pc.career.level}'),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
 
             ElevatedButton(
               onPressed: () {
