@@ -1,5 +1,5 @@
-name: mud_soccer_player
-description: "텍스트 기반 축구 커리어 MUD 게임"
+name: terminal_eleven
+description: "Terminal Eleven: Text-based Soccer Career Simulation. Codename: Project Prodigy."
 publish_to: 'none'
 version: 0.1.0
 

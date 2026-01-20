@@ -1,6 +1,6 @@
-# MUD 축구 🎮⚽
+# Terminal Eleven (Project Prodigy)
 
-텍스트 기반 축구 커리어 게임 - Flutter로 구현된 MUD(Multi-User Dungeon) 스타일 축구 게임
+**텍스트 기반 축구 커리어 시뮬레이션 게임** - Flutter로 구현된 MUD(Multi-User Dungeon) 스타일 축구 게임
 
 ## 📖 게임 소개
 
