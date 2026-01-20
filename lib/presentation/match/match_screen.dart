@@ -6,6 +6,8 @@ import 'package:go_router/go_router.dart';
 import '../../application/providers.dart';
 import '../../domain/model/models.dart';
 import '../../presentation/widgets/retro_theme.dart';
+import 'widgets/momentum_bar.dart';
+import 'widgets/tactical_controls.dart';
 
 class MatchScreen extends ConsumerStatefulWidget {
   const MatchScreen({super.key});
@@ -51,18 +53,46 @@ class _MatchScreenState extends ConsumerState<MatchScreen> {
     return Scaffold(
       backgroundColor: RetroColors.background,
       body: SafeArea(
-        child: Column(
+        child: Stack(
           children: [
-            // 스코어 헤더
-            _buildScoreHeader(context, match),
+            Column(
+              children: [
+                // 스코어 헤더
+                _buildScoreHeader(context, match),
 
-            // 경기 로그
-            Expanded(
-              child: _buildMatchLog(context, match),
+                // 모멘텀 바
+                MomentumBar(momentum: match.momentum),
+
+                // 경기 로그
+                Expanded(
+                  child: _buildMatchLog(context, match),
+                ),
+
+                // 하단 컨트롤
+                _buildBottomControls(context, ref, match),
+              ],
             ),
-
-            // 하단 컨트롤
-            _buildBottomControls(context, ref, match),
+            
+            // 클러치 타임 효과 (테두리 + 텍스트)
+            if (match.isClutchTime && match.phase != MatchPhase.fullTime)
+              IgnorePointer(
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: RetroColors.error.withOpacity(0.5), width: 4),
+                  ),
+                  alignment: Alignment.topCenter,
+                  padding: const EdgeInsets.only(top: 80), // 헤더 아래
+                  child: Text(
+                    'CLUTCH TIME 🔥',
+                    style: TextStyle(
+                      fontSize: 40,
+                      fontWeight: FontWeight.bold,
+                      color: RetroColors.error.withOpacity(0.1),
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ),
           ],
         ),
       ),

@@ -61,7 +61,7 @@ class HighlightGenerator {
         zone: FieldZone.box,
         pressure: 3,
         scoreContext: initialContext,
-        choices: ['shoot'],
+        choices: ['shoot', 'panenka', 'chipShot', 'powerShot'],
       ));
     }
 
@@ -169,7 +169,7 @@ class HighlightGenerator {
       case HighlightType.oneOnOne:
         return ['shoot', 'dribble', 'pass'];
       case HighlightType.edgeOfBoxShot:
-        return ['shoot', 'pass', 'safePlay'];
+        return ['shoot', 'powerShot', 'curvedShot', 'knuckleShot', 'pass'];
       case HighlightType.quickCounter:
         return ['dribble', 'pass', 'safePlay'];
       case HighlightType.pressing:
@@ -187,7 +187,7 @@ class HighlightGenerator {
       case HighlightType.coachFeedback:
         return ['accept', 'askRole', 'ignore'];
       case HighlightType.penaltyKick:
-        return ['shoot'];
+        return ['shoot', 'panenka', 'chipShot', 'powerShot'];
       case HighlightType.clutchChance:
         return ['shoot', 'dribble', 'pass'];
     }
