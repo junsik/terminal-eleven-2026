@@ -106,6 +106,7 @@ class HighlightResult with _$HighlightResult {
     @Default(0.0) double ratingChange, // 평점 변화
     @Default(0) int fatigueChange, // 피로 변화
     @Default(0) int confidenceChange, // 자신감 변화
+    @Default(0) int momentumChange, // 모멘텀 변화
     required String description, // 결과 설명
   }) = _HighlightResult;
 
@@ -215,6 +216,8 @@ class MatchSession with _$MatchSession {
     required int rngSeed, // 랜덤 시드
     @Default(0) int momentum, // 모멘텀 (-3 ~ +3)
     @Default(0) int consecutiveSuccess, // 연속 성공 횟수
+    @Default(0) int consecutiveFailure, // 연속 실패 횟수
+    @Default(-1) int lastShoutIndex, // 마지막 전술 외침 하이라이트 인덱스
   }) = _MatchSession;
 
   factory MatchSession.fromJson(Map<String, dynamic> json) =>
@@ -246,5 +249,12 @@ extension MatchSessionX on MatchSession {
     if (pcScore > opponentScore) return ScoreContext.leading;
     if (pcScore < opponentScore) return ScoreContext.trailing;
     return ScoreContext.draw;
+  }
+
+  /// 클러치 타임 여부 (80분 이후 & 1점차 이내 승부)
+  bool get isClutchTime {
+    if (minute < 80) return false;
+    final diff = (score.home - score.away).abs();
+    return diff <= 1;
   }
 }

@@ -1,240 +1,161 @@
-// 인박스 화면 - 코치/에이전트/팬 메시지
+/// 인박스 화면 - 코치/에이전트/팬/미디어 메시지
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../application/providers.dart';
-import '../../domain/model/models.dart';
+import '../../domain/model/inbox.dart';
 import '../../presentation/widgets/retro_theme.dart';
-
-/// 메시지 타입
-enum MessageType {
-  coach,
-  agent,
-  fan,
-  system,
-}
-
-/// 인박스 메시지
-class InboxMessage {
-  final String id;
-  final MessageType type;
-  final String sender;
-  final String subject;
-  final String content;
-  final DateTime timestamp;
-  final bool isRead;
-
-  const InboxMessage({
-    required this.id,
-    required this.type,
-    required this.sender,
-    required this.subject,
-    required this.content,
-    required this.timestamp,
-    this.isRead = false,
-  });
-}
 
 class InboxScreen extends ConsumerWidget {
   const InboxScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final pc = ref.watch(engineCharacterProvider);
+    final gameState = ref.watch(engineStateProvider);
 
-    if (pc == null) {
+    if (gameState == null) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    // 예시 메시지 생성
-    final messages = _generateMessages(pc);
+    final messages = gameState.inbox.sortedMessages;
+    final unreadCount = gameState.inbox.unreadCount;
 
     return Scaffold(
       backgroundColor: RetroColors.background,
       appBar: AppBar(
-        title: const Text('인박스'),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('인박스'),
+            if (unreadCount > 0) ...[
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: RetroColors.error,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  '$unreadCount',
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
+          ],
+        ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
           onPressed: () => context.go('/home'),
         ),
+        actions: [
+          if (unreadCount > 0)
+            TextButton(
+              onPressed: () {
+                ref.read(orchestratorProvider).markAllMessagesAsRead();
+              },
+              child: const Text(
+                '모두 읽음',
+                style: TextStyle(fontSize: 12),
+              ),
+            ),
+        ],
       ),
       body: messages.isEmpty
-          ? Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.inbox_outlined,
-                    size: 64,
-                    color: RetroColors.textSecondary,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    '새 메시지가 없습니다',
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: RetroColors.textSecondary,
-                        ),
-                  ),
-                ],
-              ),
-            )
-          : ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: messages.length,
-              separatorBuilder: (context, index) => const Divider(),
-              itemBuilder: (context, index) {
-                final message = messages[index];
-                return _MessageTile(message: message);
-              },
-            ),
+          ? _buildEmptyState(context)
+          : _buildMessageList(context, ref, messages),
     );
   }
 
-  List<InboxMessage> _generateMessages(PlayerCharacter pc) {
-    final messages = <InboxMessage>[];
-    final now = DateTime.now();
-
-    // 신뢰도에 따른 코치 메시지
-    if (pc.career.trust < 40) {
-      messages.add(InboxMessage(
-        id: '1',
-        type: MessageType.coach,
-        sender: '김 감독',
-        subject: '훈련 태도에 대해',
-        content: '경기력이 기대에 미치지 못하고 있어. 훈련에 더 집중해 주길 바란다.',
-        timestamp: now.subtract(const Duration(hours: 2)),
-      ));
-    } else if (pc.career.trust > 70) {
-      messages.add(InboxMessage(
-        id: '2',
-        type: MessageType.coach,
-        sender: '김 감독',
-        subject: '좋은 활약!',
-        content: '최근 경기력이 매우 좋아. 이대로만 해주면 더 많은 기회를 주겠다.',
-        timestamp: now.subtract(const Duration(hours: 5)),
-      ));
-    }
-
-    // 레벨업 축하 메시지
-    if (pc.career.level > 1) {
-      messages.add(InboxMessage(
-        id: '3',
-        type: MessageType.agent,
-        sender: '박 에이전트',
-        subject: '성장에 대해',
-        content: '레벨 ${pc.career.level}까지 올라왔군요! 계속 이렇게 성장하면 좋은 제안이 올 수도 있습니다.',
-        timestamp: now.subtract(const Duration(days: 1)),
-      ));
-    }
-
-    // 부상 위로 메시지
-    if (pc.status.injury != InjuryStatus.none) {
-      messages.add(InboxMessage(
-        id: '4',
-        type: MessageType.fan,
-        sender: '팬클럽',
-        subject: '빠른 쾌유를 빕니다',
-        content: '부상 소식을 듣고 걱정이 많습니다. 빨리 나아서 그라운드에서 다시 뛰어주세요! 응원합니다!',
-        timestamp: now.subtract(const Duration(hours: 12)),
-      ));
-    }
-
-    // 기본 시스템 메시지
-    messages.add(InboxMessage(
-      id: '5',
-      type: MessageType.system,
-      sender: '시스템',
-      subject: 'MUD 축구에 오신 것을 환영합니다!',
-      content: '무명 유망주에서 시작해 스타 선수로 성장하는 여정을 시작하세요. 훈련하고, 경기에 출전하고, 당신의 커리어를 만들어가세요!',
-      timestamp: now.subtract(const Duration(days: 7)),
-    ));
-
-    // 시간순 정렬
-    messages.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-
-    return messages;
-  }
-}
-
-class _MessageTile extends StatelessWidget {
-  final InboxMessage message;
-
-  const _MessageTile({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () => _showMessageDialog(context),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                border: Border.all(color: _getTypeColor()),
-                borderRadius: BorderRadius.circular(4),
-              ),
-              child: Icon(
-                _getTypeIcon(),
-                color: _getTypeColor(),
-                size: 20,
-              ),
+  Widget _buildEmptyState(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              border: Border.all(color: RetroColors.textSecondary),
+              borderRadius: BorderRadius.circular(4),
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        message.sender,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: RetroColors.primary,
-                        ),
-                      ),
-                      Text(
-                        _formatTime(message.timestamp),
-                        style: const TextStyle(
-                          fontSize: 10,
-                          color: RetroColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    message.subject,
-                    style: const TextStyle(color: RetroColors.textPrimary),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    message.content,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: RetroColors.textSecondary,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
+            child: const Icon(
+              Icons.inbox_outlined,
+              size: 48,
+              color: RetroColors.textSecondary,
             ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            '새 메시지가 없습니다',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: RetroColors.textSecondary,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '경기를 치르거나 훈련을 하면\n메시지가 도착합니다',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: RetroColors.textSecondary,
+                ),
+          ),
+        ],
       ),
     );
   }
 
-  void _showMessageDialog(BuildContext context) {
+  Widget _buildMessageList(
+    BuildContext context,
+    WidgetRef ref,
+    List<InboxMessage> messages,
+  ) {
+    return ListView.builder(
+      padding: const EdgeInsets.all(12),
+      itemCount: messages.length,
+      itemBuilder: (context, index) {
+        final message = messages[index];
+        return _MessageCard(
+          message: message,
+          onTap: () => _showMessageDetail(context, ref, message),
+          onDelete: () => _deleteMessage(context, ref, message),
+        );
+      },
+    );
+  }
+
+  void _showMessageDetail(
+    BuildContext context,
+    WidgetRef ref,
+    InboxMessage message,
+  ) {
+    // 읽음 처리
+    if (!message.isRead) {
+      ref.read(orchestratorProvider).markMessageAsRead(message.id);
+    }
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: RetroColors.surface,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+        side: BorderSide(color: RetroColors.border),
+      ),
+      builder: (context) => _MessageDetailSheet(message: message),
+    );
+  }
+
+  void _deleteMessage(
+    BuildContext context,
+    WidgetRef ref,
+    InboxMessage message,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -243,82 +164,321 @@ class _MessageTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(4),
           side: const BorderSide(color: RetroColors.border),
         ),
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(_getTypeIcon(), color: _getTypeColor(), size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  message.sender,
-                  style: TextStyle(
-                    color: _getTypeColor(),
-                    fontSize: 14,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              message.subject,
-              style: const TextStyle(
-                color: RetroColors.primary,
-                fontSize: 16,
-              ),
-            ),
-          ],
+        title: const Text(
+          '메시지 삭제',
+          style: TextStyle(color: RetroColors.primary),
         ),
-        content: Text(
-          message.content,
-          style: const TextStyle(color: RetroColors.textPrimary),
+        content: const Text(
+          '이 메시지를 삭제하시겠습니까?',
+          style: TextStyle(color: RetroColors.textPrimary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('닫기'),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () {
+              ref.read(orchestratorProvider).deleteMessage(message.id);
+              Navigator.pop(context);
+            },
+            style: TextButton.styleFrom(foregroundColor: RetroColors.error),
+            child: const Text('삭제'),
           ),
         ],
       ),
     );
   }
+}
 
-  IconData _getTypeIcon() {
-    switch (message.type) {
-      case MessageType.coach:
-        return Icons.sports;
-      case MessageType.agent:
-        return Icons.business;
-      case MessageType.fan:
-        return Icons.favorite;
-      case MessageType.system:
-        return Icons.info;
-    }
+class _MessageCard extends StatelessWidget {
+  final InboxMessage message;
+  final VoidCallback onTap;
+  final VoidCallback onDelete;
+
+  const _MessageCard({
+    required this.message,
+    required this.onTap,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isUnread = !message.isRead;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(4),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: isUnread ? RetroColors.surface : RetroColors.background,
+            border: Border.all(
+              color: isUnread ? RetroColors.primary : RetroColors.divider,
+              width: isUnread ? 1 : 0.5,
+            ),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 발신자 아이콘
+              _SenderIcon(sender: message.sender, isUnread: isUnread),
+              const SizedBox(width: 12),
+              // 메시지 내용
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            message.senderName,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: _getSenderColor(message.sender),
+                              fontWeight:
+                                  isUnread ? FontWeight.bold : FontWeight.normal,
+                            ),
+                          ),
+                        ),
+                        Text(
+                          _formatGameWeek(message.gameWeek),
+                          style: const TextStyle(
+                            fontSize: 10,
+                            color: RetroColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      message.subject,
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: RetroColors.textPrimary,
+                        fontWeight:
+                            isUnread ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      message.content,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: RetroColors.textSecondary,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
+                ),
+              ),
+              // 삭제 버튼
+              IconButton(
+                icon: const Icon(
+                  Icons.close,
+                  size: 16,
+                  color: RetroColors.textSecondary,
+                ),
+                onPressed: onDelete,
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(
+                  minWidth: 24,
+                  minHeight: 24,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
-  Color _getTypeColor() {
-    switch (message.type) {
-      case MessageType.coach:
-        return RetroColors.primary;
-      case MessageType.agent:
-        return RetroColors.warning;
-      case MessageType.fan:
-        return RetroColors.error;
-      case MessageType.system:
-        return RetroColors.textSecondary;
-    }
+  Color _getSenderColor(MessageSender sender) {
+    return switch (sender) {
+      MessageSender.coach => RetroColors.primary,
+      MessageSender.agent => RetroColors.warning,
+      MessageSender.fan => Colors.pinkAccent,
+      MessageSender.media => Colors.lightBlueAccent,
+      MessageSender.system => RetroColors.textSecondary,
+    };
   }
 
-  String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    final diff = now.difference(time);
+  String _formatGameWeek(int week) {
+    return 'R$week';
+  }
+}
 
-    if (diff.inMinutes < 60) {
-      return '${diff.inMinutes}분 전';
-    } else if (diff.inHours < 24) {
-      return '${diff.inHours}시간 전';
-    } else {
-      return '${diff.inDays}일 전';
-    }
+class _SenderIcon extends StatelessWidget {
+  final MessageSender sender;
+  final bool isUnread;
+
+  const _SenderIcon({required this.sender, required this.isUnread});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        color: RetroColors.background,
+        border: Border.all(
+          color: _getColor(),
+          width: isUnread ? 2 : 1,
+        ),
+        borderRadius: BorderRadius.circular(4),
+      ),
+      child: Icon(
+        _getIcon(),
+        color: _getColor(),
+        size: 18,
+      ),
+    );
+  }
+
+  IconData _getIcon() {
+    return switch (sender) {
+      MessageSender.coach => Icons.sports,
+      MessageSender.agent => Icons.business_center,
+      MessageSender.fan => Icons.favorite,
+      MessageSender.media => Icons.newspaper,
+      MessageSender.system => Icons.info_outline,
+    };
+  }
+
+  Color _getColor() {
+    return switch (sender) {
+      MessageSender.coach => RetroColors.primary,
+      MessageSender.agent => RetroColors.warning,
+      MessageSender.fan => Colors.pinkAccent,
+      MessageSender.media => Colors.lightBlueAccent,
+      MessageSender.system => RetroColors.textSecondary,
+    };
+  }
+}
+
+class _MessageDetailSheet extends StatelessWidget {
+  final InboxMessage message;
+
+  const _MessageDetailSheet({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.5,
+      minChildSize: 0.3,
+      maxChildSize: 0.8,
+      expand: false,
+      builder: (context, scrollController) {
+        return SingleChildScrollView(
+          controller: scrollController,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 핸들
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: RetroColors.textSecondary,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              // 발신자 정보
+              Row(
+                children: [
+                  _SenderIcon(sender: message.sender, isUnread: false),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          message.senderName,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: _getSenderColor(message.sender),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        Text(
+                          _formatCategory(message.category),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: RetroColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    'R${message.gameWeek}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: RetroColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              const Divider(color: RetroColors.divider),
+              const SizedBox(height: 16),
+              // 제목
+              Text(
+                message.subject,
+                style: const TextStyle(
+                  fontSize: 18,
+                  color: RetroColors.primary,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              // 본문
+              Text(
+                message.content,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: RetroColors.textPrimary,
+                  height: 1.6,
+                ),
+              ),
+              const SizedBox(height: 32),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Color _getSenderColor(MessageSender sender) {
+    return switch (sender) {
+      MessageSender.coach => RetroColors.primary,
+      MessageSender.agent => RetroColors.warning,
+      MessageSender.fan => Colors.pinkAccent,
+      MessageSender.media => Colors.lightBlueAccent,
+      MessageSender.system => RetroColors.textSecondary,
+    };
+  }
+
+  String _formatCategory(MessageCategory category) {
+    return switch (category) {
+      MessageCategory.welcome => '환영 메시지',
+      MessageCategory.training => '훈련',
+      MessageCategory.matchResult => '경기 결과',
+      MessageCategory.levelUp => '레벨업',
+      MessageCategory.injury => '부상',
+      MessageCategory.trust => '신뢰도',
+      MessageCategory.milestone => '기록 달성',
+      MessageCategory.form => '컨디션',
+      MessageCategory.general => '일반',
+    };
   }
 }

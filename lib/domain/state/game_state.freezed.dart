@@ -33,6 +33,9 @@ mixin _$GameState {
   /// 메타 정보
   MetaState get meta => throw _privateConstructorUsedError;
 
+  /// 인박스 상태
+  InboxState get inbox => throw _privateConstructorUsedError;
+
   /// Serializes this GameState to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
@@ -53,12 +56,14 @@ abstract class $GameStateCopyWith<$Res> {
     SeasonState season,
     UIScreenState ui,
     MetaState meta,
+    InboxState inbox,
   });
 
   $PlayerStateCopyWith<$Res> get player;
   $SeasonStateCopyWith<$Res> get season;
   $UIScreenStateCopyWith<$Res> get ui;
   $MetaStateCopyWith<$Res> get meta;
+  $InboxStateCopyWith<$Res> get inbox;
 }
 
 /// @nodoc
@@ -80,6 +85,7 @@ class _$GameStateCopyWithImpl<$Res, $Val extends GameState>
     Object? season = null,
     Object? ui = null,
     Object? meta = null,
+    Object? inbox = null,
   }) {
     return _then(
       _value.copyWith(
@@ -99,6 +105,10 @@ class _$GameStateCopyWithImpl<$Res, $Val extends GameState>
                 ? _value.meta
                 : meta // ignore: cast_nullable_to_non_nullable
                       as MetaState,
+            inbox: null == inbox
+                ? _value.inbox
+                : inbox // ignore: cast_nullable_to_non_nullable
+                      as InboxState,
           )
           as $Val,
     );
@@ -143,6 +153,16 @@ class _$GameStateCopyWithImpl<$Res, $Val extends GameState>
       return _then(_value.copyWith(meta: value) as $Val);
     });
   }
+
+  /// Create a copy of GameState
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $InboxStateCopyWith<$Res> get inbox {
+    return $InboxStateCopyWith<$Res>(_value.inbox, (value) {
+      return _then(_value.copyWith(inbox: value) as $Val);
+    });
+  }
 }
 
 /// @nodoc
@@ -159,6 +179,7 @@ abstract class _$$GameStateImplCopyWith<$Res>
     SeasonState season,
     UIScreenState ui,
     MetaState meta,
+    InboxState inbox,
   });
 
   @override
@@ -169,6 +190,8 @@ abstract class _$$GameStateImplCopyWith<$Res>
   $UIScreenStateCopyWith<$Res> get ui;
   @override
   $MetaStateCopyWith<$Res> get meta;
+  @override
+  $InboxStateCopyWith<$Res> get inbox;
 }
 
 /// @nodoc
@@ -189,6 +212,7 @@ class __$$GameStateImplCopyWithImpl<$Res>
     Object? season = null,
     Object? ui = null,
     Object? meta = null,
+    Object? inbox = null,
   }) {
     return _then(
       _$GameStateImpl(
@@ -208,6 +232,10 @@ class __$$GameStateImplCopyWithImpl<$Res>
             ? _value.meta
             : meta // ignore: cast_nullable_to_non_nullable
                   as MetaState,
+        inbox: null == inbox
+            ? _value.inbox
+            : inbox // ignore: cast_nullable_to_non_nullable
+                  as InboxState,
       ),
     );
   }
@@ -221,6 +249,7 @@ class _$GameStateImpl extends _GameState {
     required this.season,
     required this.ui,
     required this.meta,
+    this.inbox = const InboxState(),
   }) : super._();
 
   factory _$GameStateImpl.fromJson(Map<String, dynamic> json) =>
@@ -242,9 +271,14 @@ class _$GameStateImpl extends _GameState {
   @override
   final MetaState meta;
 
+  /// 인박스 상태
+  @override
+  @JsonKey()
+  final InboxState inbox;
+
   @override
   String toString() {
-    return 'GameState(player: $player, season: $season, ui: $ui, meta: $meta)';
+    return 'GameState(player: $player, season: $season, ui: $ui, meta: $meta, inbox: $inbox)';
   }
 
   @override
@@ -255,12 +289,13 @@ class _$GameStateImpl extends _GameState {
             (identical(other.player, player) || other.player == player) &&
             (identical(other.season, season) || other.season == season) &&
             (identical(other.ui, ui) || other.ui == ui) &&
-            (identical(other.meta, meta) || other.meta == meta));
+            (identical(other.meta, meta) || other.meta == meta) &&
+            (identical(other.inbox, inbox) || other.inbox == inbox));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, player, season, ui, meta);
+  int get hashCode => Object.hash(runtimeType, player, season, ui, meta, inbox);
 
   /// Create a copy of GameState
   /// with the given fields replaced by the non-null parameter values.
@@ -282,6 +317,7 @@ abstract class _GameState extends GameState {
     required final SeasonState season,
     required final UIScreenState ui,
     required final MetaState meta,
+    final InboxState inbox,
   }) = _$GameStateImpl;
   const _GameState._() : super._();
 
@@ -304,6 +340,10 @@ abstract class _GameState extends GameState {
   @override
   MetaState get meta;
 
+  /// 인박스 상태
+  @override
+  InboxState get inbox;
+
   /// Create a copy of GameState
   /// with the given fields replaced by the non-null parameter values.
   @override
@@ -324,6 +364,10 @@ mixin _$PlayerState {
   /// 이번 주 남은 행동 횟수
   int get weeklyActionsRemaining => throw _privateConstructorUsedError;
 
+  /// 마지막 훈련 이벤트 (UI 표시용)
+  TrainingEventResult? get lastTrainingEvent =>
+      throw _privateConstructorUsedError;
+
   /// Serializes this PlayerState to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
 
@@ -341,9 +385,14 @@ abstract class $PlayerStateCopyWith<$Res> {
     $Res Function(PlayerState) then,
   ) = _$PlayerStateCopyWithImpl<$Res, PlayerState>;
   @useResult
-  $Res call({PlayerCharacter character, int weeklyActionsRemaining});
+  $Res call({
+    PlayerCharacter character,
+    int weeklyActionsRemaining,
+    TrainingEventResult? lastTrainingEvent,
+  });
 
   $PlayerCharacterCopyWith<$Res> get character;
+  $TrainingEventResultCopyWith<$Res>? get lastTrainingEvent;
 }
 
 /// @nodoc
@@ -360,7 +409,11 @@ class _$PlayerStateCopyWithImpl<$Res, $Val extends PlayerState>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? character = null, Object? weeklyActionsRemaining = null}) {
+  $Res call({
+    Object? character = null,
+    Object? weeklyActionsRemaining = null,
+    Object? lastTrainingEvent = freezed,
+  }) {
     return _then(
       _value.copyWith(
             character: null == character
@@ -371,6 +424,10 @@ class _$PlayerStateCopyWithImpl<$Res, $Val extends PlayerState>
                 ? _value.weeklyActionsRemaining
                 : weeklyActionsRemaining // ignore: cast_nullable_to_non_nullable
                       as int,
+            lastTrainingEvent: freezed == lastTrainingEvent
+                ? _value.lastTrainingEvent
+                : lastTrainingEvent // ignore: cast_nullable_to_non_nullable
+                      as TrainingEventResult?,
           )
           as $Val,
     );
@@ -385,6 +442,22 @@ class _$PlayerStateCopyWithImpl<$Res, $Val extends PlayerState>
       return _then(_value.copyWith(character: value) as $Val);
     });
   }
+
+  /// Create a copy of PlayerState
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @pragma('vm:prefer-inline')
+  $TrainingEventResultCopyWith<$Res>? get lastTrainingEvent {
+    if (_value.lastTrainingEvent == null) {
+      return null;
+    }
+
+    return $TrainingEventResultCopyWith<$Res>(_value.lastTrainingEvent!, (
+      value,
+    ) {
+      return _then(_value.copyWith(lastTrainingEvent: value) as $Val);
+    });
+  }
 }
 
 /// @nodoc
@@ -396,10 +469,16 @@ abstract class _$$PlayerStateImplCopyWith<$Res>
   ) = __$$PlayerStateImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({PlayerCharacter character, int weeklyActionsRemaining});
+  $Res call({
+    PlayerCharacter character,
+    int weeklyActionsRemaining,
+    TrainingEventResult? lastTrainingEvent,
+  });
 
   @override
   $PlayerCharacterCopyWith<$Res> get character;
+  @override
+  $TrainingEventResultCopyWith<$Res>? get lastTrainingEvent;
 }
 
 /// @nodoc
@@ -415,7 +494,11 @@ class __$$PlayerStateImplCopyWithImpl<$Res>
   /// with the given fields replaced by the non-null parameter values.
   @pragma('vm:prefer-inline')
   @override
-  $Res call({Object? character = null, Object? weeklyActionsRemaining = null}) {
+  $Res call({
+    Object? character = null,
+    Object? weeklyActionsRemaining = null,
+    Object? lastTrainingEvent = freezed,
+  }) {
     return _then(
       _$PlayerStateImpl(
         character: null == character
@@ -426,6 +509,10 @@ class __$$PlayerStateImplCopyWithImpl<$Res>
             ? _value.weeklyActionsRemaining
             : weeklyActionsRemaining // ignore: cast_nullable_to_non_nullable
                   as int,
+        lastTrainingEvent: freezed == lastTrainingEvent
+            ? _value.lastTrainingEvent
+            : lastTrainingEvent // ignore: cast_nullable_to_non_nullable
+                  as TrainingEventResult?,
       ),
     );
   }
@@ -437,6 +524,7 @@ class _$PlayerStateImpl extends _PlayerState {
   const _$PlayerStateImpl({
     required this.character,
     this.weeklyActionsRemaining = 3,
+    this.lastTrainingEvent,
   }) : super._();
 
   factory _$PlayerStateImpl.fromJson(Map<String, dynamic> json) =>
@@ -451,9 +539,13 @@ class _$PlayerStateImpl extends _PlayerState {
   @JsonKey()
   final int weeklyActionsRemaining;
 
+  /// 마지막 훈련 이벤트 (UI 표시용)
+  @override
+  final TrainingEventResult? lastTrainingEvent;
+
   @override
   String toString() {
-    return 'PlayerState(character: $character, weeklyActionsRemaining: $weeklyActionsRemaining)';
+    return 'PlayerState(character: $character, weeklyActionsRemaining: $weeklyActionsRemaining, lastTrainingEvent: $lastTrainingEvent)';
   }
 
   @override
@@ -464,13 +556,19 @@ class _$PlayerStateImpl extends _PlayerState {
             (identical(other.character, character) ||
                 other.character == character) &&
             (identical(other.weeklyActionsRemaining, weeklyActionsRemaining) ||
-                other.weeklyActionsRemaining == weeklyActionsRemaining));
+                other.weeklyActionsRemaining == weeklyActionsRemaining) &&
+            (identical(other.lastTrainingEvent, lastTrainingEvent) ||
+                other.lastTrainingEvent == lastTrainingEvent));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode =>
-      Object.hash(runtimeType, character, weeklyActionsRemaining);
+  int get hashCode => Object.hash(
+    runtimeType,
+    character,
+    weeklyActionsRemaining,
+    lastTrainingEvent,
+  );
 
   /// Create a copy of PlayerState
   /// with the given fields replaced by the non-null parameter values.
@@ -490,6 +588,7 @@ abstract class _PlayerState extends PlayerState {
   const factory _PlayerState({
     required final PlayerCharacter character,
     final int weeklyActionsRemaining,
+    final TrainingEventResult? lastTrainingEvent,
   }) = _$PlayerStateImpl;
   const _PlayerState._() : super._();
 
@@ -503,6 +602,10 @@ abstract class _PlayerState extends PlayerState {
   /// 이번 주 남은 행동 횟수
   @override
   int get weeklyActionsRemaining;
+
+  /// 마지막 훈련 이벤트 (UI 표시용)
+  @override
+  TrainingEventResult? get lastTrainingEvent;
 
   /// Create a copy of PlayerState
   /// with the given fields replaced by the non-null parameter values.
@@ -1242,5 +1345,172 @@ abstract class _MetaState implements MetaState {
   @override
   @JsonKey(includeFromJson: false, includeToJson: false)
   _$$MetaStateImplCopyWith<_$MetaStateImpl> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+InboxState _$InboxStateFromJson(Map<String, dynamic> json) {
+  return _InboxState.fromJson(json);
+}
+
+/// @nodoc
+mixin _$InboxState {
+  /// 모든 메시지 목록
+  List<InboxMessage> get messages => throw _privateConstructorUsedError;
+
+  /// Serializes this InboxState to a JSON map.
+  Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
+
+  /// Create a copy of InboxState
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  $InboxStateCopyWith<InboxState> get copyWith =>
+      throw _privateConstructorUsedError;
+}
+
+/// @nodoc
+abstract class $InboxStateCopyWith<$Res> {
+  factory $InboxStateCopyWith(
+    InboxState value,
+    $Res Function(InboxState) then,
+  ) = _$InboxStateCopyWithImpl<$Res, InboxState>;
+  @useResult
+  $Res call({List<InboxMessage> messages});
+}
+
+/// @nodoc
+class _$InboxStateCopyWithImpl<$Res, $Val extends InboxState>
+    implements $InboxStateCopyWith<$Res> {
+  _$InboxStateCopyWithImpl(this._value, this._then);
+
+  // ignore: unused_field
+  final $Val _value;
+  // ignore: unused_field
+  final $Res Function($Val) _then;
+
+  /// Create a copy of InboxState
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? messages = null}) {
+    return _then(
+      _value.copyWith(
+            messages: null == messages
+                ? _value.messages
+                : messages // ignore: cast_nullable_to_non_nullable
+                      as List<InboxMessage>,
+          )
+          as $Val,
+    );
+  }
+}
+
+/// @nodoc
+abstract class _$$InboxStateImplCopyWith<$Res>
+    implements $InboxStateCopyWith<$Res> {
+  factory _$$InboxStateImplCopyWith(
+    _$InboxStateImpl value,
+    $Res Function(_$InboxStateImpl) then,
+  ) = __$$InboxStateImplCopyWithImpl<$Res>;
+  @override
+  @useResult
+  $Res call({List<InboxMessage> messages});
+}
+
+/// @nodoc
+class __$$InboxStateImplCopyWithImpl<$Res>
+    extends _$InboxStateCopyWithImpl<$Res, _$InboxStateImpl>
+    implements _$$InboxStateImplCopyWith<$Res> {
+  __$$InboxStateImplCopyWithImpl(
+    _$InboxStateImpl _value,
+    $Res Function(_$InboxStateImpl) _then,
+  ) : super(_value, _then);
+
+  /// Create a copy of InboxState
+  /// with the given fields replaced by the non-null parameter values.
+  @pragma('vm:prefer-inline')
+  @override
+  $Res call({Object? messages = null}) {
+    return _then(
+      _$InboxStateImpl(
+        messages: null == messages
+            ? _value._messages
+            : messages // ignore: cast_nullable_to_non_nullable
+                  as List<InboxMessage>,
+      ),
+    );
+  }
+}
+
+/// @nodoc
+@JsonSerializable()
+class _$InboxStateImpl extends _InboxState {
+  const _$InboxStateImpl({final List<InboxMessage> messages = const []})
+    : _messages = messages,
+      super._();
+
+  factory _$InboxStateImpl.fromJson(Map<String, dynamic> json) =>
+      _$$InboxStateImplFromJson(json);
+
+  /// 모든 메시지 목록
+  final List<InboxMessage> _messages;
+
+  /// 모든 메시지 목록
+  @override
+  @JsonKey()
+  List<InboxMessage> get messages {
+    if (_messages is EqualUnmodifiableListView) return _messages;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_messages);
+  }
+
+  @override
+  String toString() {
+    return 'InboxState(messages: $messages)';
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return identical(this, other) ||
+        (other.runtimeType == runtimeType &&
+            other is _$InboxStateImpl &&
+            const DeepCollectionEquality().equals(other._messages, _messages));
+  }
+
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  int get hashCode =>
+      Object.hash(runtimeType, const DeepCollectionEquality().hash(_messages));
+
+  /// Create a copy of InboxState
+  /// with the given fields replaced by the non-null parameter values.
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  @override
+  @pragma('vm:prefer-inline')
+  _$$InboxStateImplCopyWith<_$InboxStateImpl> get copyWith =>
+      __$$InboxStateImplCopyWithImpl<_$InboxStateImpl>(this, _$identity);
+
+  @override
+  Map<String, dynamic> toJson() {
+    return _$$InboxStateImplToJson(this);
+  }
+}
+
+abstract class _InboxState extends InboxState {
+  const factory _InboxState({final List<InboxMessage> messages}) =
+      _$InboxStateImpl;
+  const _InboxState._() : super._();
+
+  factory _InboxState.fromJson(Map<String, dynamic> json) =
+      _$InboxStateImpl.fromJson;
+
+  /// 모든 메시지 목록
+  @override
+  List<InboxMessage> get messages;
+
+  /// Create a copy of InboxState
+  /// with the given fields replaced by the non-null parameter values.
+  @override
+  @JsonKey(includeFromJson: false, includeToJson: false)
+  _$$InboxStateImplCopyWith<_$InboxStateImpl> get copyWith =>
       throw _privateConstructorUsedError;
 }

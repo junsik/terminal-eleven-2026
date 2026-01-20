@@ -18,6 +18,7 @@ class HomeScreen extends ConsumerWidget {
     final weeklyActions = ref.watch(engineWeeklyActionsProvider);
     final standings = ref.watch(engineStandingsProvider);
     final pcRank = ref.watch(enginePcRankProvider);
+    final unreadCount = ref.watch(engineStateProvider)?.inbox.unreadCount ?? 0;
 
     if (pc == null || season == null) {
       return const Scaffold(
@@ -81,9 +82,38 @@ class HomeScreen extends ConsumerWidget {
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.mail_outline),
-            onPressed: () => context.push('/inbox'),
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.mail_outline),
+                onPressed: () => context.push('/inbox'),
+              ),
+              if (unreadCount > 0)
+                Positioned(
+                  right: 6,
+                  top: 6,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      color: RetroColors.error,
+                      shape: BoxShape.circle,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      unreadCount > 9 ? '9+' : '$unreadCount',
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
           ),
           IconButton(
             icon: const Icon(Icons.person),

@@ -12,6 +12,9 @@ _$GameStateImpl _$$GameStateImplFromJson(Map<String, dynamic> json) =>
       season: SeasonState.fromJson(json['season'] as Map<String, dynamic>),
       ui: UIScreenState.fromJson(json['ui'] as Map<String, dynamic>),
       meta: MetaState.fromJson(json['meta'] as Map<String, dynamic>),
+      inbox: json['inbox'] == null
+          ? const InboxState()
+          : InboxState.fromJson(json['inbox'] as Map<String, dynamic>),
     );
 
 Map<String, dynamic> _$$GameStateImplToJson(_$GameStateImpl instance) =>
@@ -20,6 +23,7 @@ Map<String, dynamic> _$$GameStateImplToJson(_$GameStateImpl instance) =>
       'season': instance.season,
       'ui': instance.ui,
       'meta': instance.meta,
+      'inbox': instance.inbox,
     };
 
 _$PlayerStateImpl _$$PlayerStateImplFromJson(Map<String, dynamic> json) =>
@@ -29,12 +33,18 @@ _$PlayerStateImpl _$$PlayerStateImplFromJson(Map<String, dynamic> json) =>
       ),
       weeklyActionsRemaining:
           (json['weeklyActionsRemaining'] as num?)?.toInt() ?? 3,
+      lastTrainingEvent: json['lastTrainingEvent'] == null
+          ? null
+          : TrainingEventResult.fromJson(
+              json['lastTrainingEvent'] as Map<String, dynamic>,
+            ),
     );
 
 Map<String, dynamic> _$$PlayerStateImplToJson(_$PlayerStateImpl instance) =>
     <String, dynamic>{
       'character': instance.character,
       'weeklyActionsRemaining': instance.weeklyActionsRemaining,
+      'lastTrainingEvent': instance.lastTrainingEvent,
     };
 
 _$SeasonStateImpl _$$SeasonStateImplFromJson(Map<String, dynamic> json) =>
@@ -103,3 +113,15 @@ Map<String, dynamic> _$$MetaStateImplToJson(_$MetaStateImpl instance) =>
       'version': instance.version,
       'savedAt': instance.savedAt.toIso8601String(),
     };
+
+_$InboxStateImpl _$$InboxStateImplFromJson(Map<String, dynamic> json) =>
+    _$InboxStateImpl(
+      messages:
+          (json['messages'] as List<dynamic>?)
+              ?.map((e) => InboxMessage.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
+    );
+
+Map<String, dynamic> _$$InboxStateImplToJson(_$InboxStateImpl instance) =>
+    <String, dynamic>{'messages': instance.messages};

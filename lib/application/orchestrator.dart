@@ -16,8 +16,10 @@ import '../domain/engine/career_engine.dart';
 import '../domain/engine/ui_engine.dart';
 import '../domain/engine/match_engine.dart';
 import '../domain/engine/system_engine.dart';
+import '../domain/engine/inbox_engine.dart';
+import '../domain/engine/inbox_message_factory.dart';
 import '../data/storage/hive_store.dart';
-import '../domain/model/game_snapshot.dart' show TrainingType;
+import '../domain/model/game_snapshot.dart' show TrainingType, TrainingIntensity;
 import '../domain/model/match.dart'; // RatingAccumulatorX extension
 import '../domain/model/command.dart'; // CommandType
 import '../domain/model/player.dart'; // PlayerCharacter, PlayerPosition, PlayerArchetype
@@ -86,6 +88,7 @@ class GameOrchestrator {
           UIEngine(),
           MatchEngine(),
           SystemEngine(),
+          InboxEngine(),
         ];
 
   /// 현재 상태 (읽기 전용)
@@ -122,8 +125,11 @@ class GameOrchestrator {
   }
 
   /// 훈련 실행 (편의 메서드)
-  void executeTraining(TrainingType type) {
-    dispatch(ExecuteTraining(type));
+  void executeTraining(
+    TrainingType type, {
+    TrainingIntensity intensity = TrainingIntensity.normal,
+  }) {
+    dispatch(ExecuteTraining(type, intensity: intensity));
   }
 
   /// 경기 종료 처리 (복합 액션)
@@ -136,6 +142,23 @@ class GameOrchestrator {
     final match = currentState.ui.activeMatch;
     if (match == null) return;
 
+    final pcTeamId = currentState.player.teamId;
+    final isHome = match.homeTeamId == pcTeamId;
+    final isWin = isHome
+        ? match.score.home > match.score.away
+        : match.score.away > match.score.home;
+    final isDraw = match.score.home == match.score.away;
+
+    // 상대팀 이름 가져오기
+    final opponentId = isHome ? match.awayTeamId : match.homeTeamId;
+    final opponentName =
+        currentState.season.teams[opponentId]?.name ?? '상대팀';
+
+    // 경기 전 커리어 정보 저장 (마일스톤 체크용)
+    final oldCareer = currentState.player.career;
+    final oldForm = currentState.player.status.form;
+    final oldTrust = currentState.player.career.trust;
+
     // 1. 커리어 업데이트 (평점, 골, 어시스트)
     dispatch(RecordMatchStats(
       rating: match.ratingAccumulator.finalRating,
@@ -143,7 +166,14 @@ class GameOrchestrator {
       assists: match.ratingAccumulator.assists,
     ));
 
-    // 2. PC 팀 순위표 업데이트
+    // 1.5 픽스처 결과 강제 업데이트 (버그 수정용)
+    dispatch(UpdateFixture(
+      fixtureId: match.fixtureId,
+      homeScore: match.score.home,
+      awayScore: match.score.away,
+    ));
+
+    // 2. 순위표 업데이트
     dispatch(UpdateStandings(MatchResultData(
       homeTeamId: match.homeTeamId,
       awayTeamId: match.awayTeamId,
@@ -160,7 +190,54 @@ class GameOrchestrator {
     // 5. 주간 액션 리셋
     dispatch(const ResetWeeklyActions());
 
-    // 6. 홈 화면으로
+    // 6. 경기 결과 메시지
+    dispatch(InboxMessageFactory.matchResult(
+      isWin: isWin,
+      isDraw: isDraw,
+      homeScore: match.score.home,
+      awayScore: match.score.away,
+      rating: match.ratingAccumulator.finalRating,
+      goals: match.ratingAccumulator.goals,
+      assists: match.ratingAccumulator.assists,
+      opponentName: opponentName,
+      isHome: isHome,
+    ));
+
+    // 7. 마일스톤 메시지 (첫 골, 10골 등)
+    final newState = _store.state;
+    if (newState != null) {
+      final newCareer = newState.player.career;
+      final milestoneMsg = InboxMessageFactory.milestone(
+        totalGoals: newCareer.totalGoals,
+        totalAssists: newCareer.totalAssists,
+        matchesPlayed: newCareer.matchesPlayed,
+      );
+      if (milestoneMsg != null &&
+          (oldCareer.totalGoals != newCareer.totalGoals ||
+              oldCareer.matchesPlayed != newCareer.matchesPlayed)) {
+        dispatch(milestoneMsg);
+      }
+
+      // 8. 폼 변화 메시지
+      final formMsg = InboxMessageFactory.formChange(
+        oldForm,
+        newState.player.status.form,
+      );
+      if (formMsg != null) {
+        dispatch(formMsg);
+      }
+
+      // 9. 신뢰도 변화 메시지
+      final trustMsg = InboxMessageFactory.trustChange(
+        oldTrust,
+        newState.player.career.trust,
+      );
+      if (trustMsg != null) {
+        dispatch(trustMsg);
+      }
+    }
+
+    // 10. 홈 화면으로
     dispatch(const GoToHome());
   }
 
@@ -212,6 +289,11 @@ class GameOrchestrator {
   /// 하이라이트 선택 처리
   void processHighlightChoice(CommandType command) {
     dispatch(ProcessHighlightChoice(command));
+  }
+
+  /// 전술 외침 실행
+  void executeTacticalShout(CommandType shoutType) {
+    dispatch(ExecuteTacticalShout(shoutType));
   }
 
   /// 다음 하이라이트로 진행
@@ -277,5 +359,24 @@ class GameOrchestrator {
 
     final newState = systemEngine.process(dummyState, action, seed);
     _store.initialize(newState);
+
+    // 환영 메시지 추가
+    final teamName = newState.season.teams[teamId]?.name ?? teamId;
+    dispatch(InboxMessageFactory.welcome(playerName, teamName));
+  }
+
+  /// 인박스 메시지 읽음 처리
+  void markMessageAsRead(String messageId) {
+    dispatch(MarkMessageAsRead(messageId));
+  }
+
+  /// 모든 메시지 읽음 처리
+  void markAllMessagesAsRead() {
+    dispatch(const MarkAllMessagesAsRead());
+  }
+
+  /// 메시지 삭제
+  void deleteMessage(String messageId) {
+    dispatch(DeleteInboxMessage(messageId));
   }
 }

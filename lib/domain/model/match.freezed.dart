@@ -383,6 +383,7 @@ mixin _$HighlightResult {
   double get ratingChange => throw _privateConstructorUsedError; // 평점 변화
   int get fatigueChange => throw _privateConstructorUsedError; // 피로 변화
   int get confidenceChange => throw _privateConstructorUsedError; // 자신감 변화
+  int get momentumChange => throw _privateConstructorUsedError; // 모멘텀 변화
   String get description => throw _privateConstructorUsedError;
 
   /// Serializes this HighlightResult to a JSON map.
@@ -412,6 +413,7 @@ abstract class $HighlightResultCopyWith<$Res> {
     double ratingChange,
     int fatigueChange,
     int confidenceChange,
+    int momentumChange,
     String description,
   });
 }
@@ -440,6 +442,7 @@ class _$HighlightResultCopyWithImpl<$Res, $Val extends HighlightResult>
     Object? ratingChange = null,
     Object? fatigueChange = null,
     Object? confidenceChange = null,
+    Object? momentumChange = null,
     Object? description = null,
   }) {
     return _then(
@@ -480,6 +483,10 @@ class _$HighlightResultCopyWithImpl<$Res, $Val extends HighlightResult>
                 ? _value.confidenceChange
                 : confidenceChange // ignore: cast_nullable_to_non_nullable
                       as int,
+            momentumChange: null == momentumChange
+                ? _value.momentumChange
+                : momentumChange // ignore: cast_nullable_to_non_nullable
+                      as int,
             description: null == description
                 ? _value.description
                 : description // ignore: cast_nullable_to_non_nullable
@@ -509,6 +516,7 @@ abstract class _$$HighlightResultImplCopyWith<$Res>
     double ratingChange,
     int fatigueChange,
     int confidenceChange,
+    int momentumChange,
     String description,
   });
 }
@@ -536,6 +544,7 @@ class __$$HighlightResultImplCopyWithImpl<$Res>
     Object? ratingChange = null,
     Object? fatigueChange = null,
     Object? confidenceChange = null,
+    Object? momentumChange = null,
     Object? description = null,
   }) {
     return _then(
@@ -576,6 +585,10 @@ class __$$HighlightResultImplCopyWithImpl<$Res>
             ? _value.confidenceChange
             : confidenceChange // ignore: cast_nullable_to_non_nullable
                   as int,
+        momentumChange: null == momentumChange
+            ? _value.momentumChange
+            : momentumChange // ignore: cast_nullable_to_non_nullable
+                  as int,
         description: null == description
             ? _value.description
             : description // ignore: cast_nullable_to_non_nullable
@@ -598,6 +611,7 @@ class _$HighlightResultImpl implements _HighlightResult {
     this.ratingChange = 0.0,
     this.fatigueChange = 0,
     this.confidenceChange = 0,
+    this.momentumChange = 0,
     required this.description,
   });
 
@@ -640,11 +654,15 @@ class _$HighlightResultImpl implements _HighlightResult {
   final int confidenceChange;
   // 자신감 변화
   @override
+  @JsonKey()
+  final int momentumChange;
+  // 모멘텀 변화
+  @override
   final String description;
 
   @override
   String toString() {
-    return 'HighlightResult(success: $success, isGoal: $isGoal, isAssist: $isAssist, isYellowCard: $isYellowCard, isRedCard: $isRedCard, isInjury: $isInjury, ratingChange: $ratingChange, fatigueChange: $fatigueChange, confidenceChange: $confidenceChange, description: $description)';
+    return 'HighlightResult(success: $success, isGoal: $isGoal, isAssist: $isAssist, isYellowCard: $isYellowCard, isRedCard: $isRedCard, isInjury: $isInjury, ratingChange: $ratingChange, fatigueChange: $fatigueChange, confidenceChange: $confidenceChange, momentumChange: $momentumChange, description: $description)';
   }
 
   @override
@@ -668,6 +686,8 @@ class _$HighlightResultImpl implements _HighlightResult {
                 other.fatigueChange == fatigueChange) &&
             (identical(other.confidenceChange, confidenceChange) ||
                 other.confidenceChange == confidenceChange) &&
+            (identical(other.momentumChange, momentumChange) ||
+                other.momentumChange == momentumChange) &&
             (identical(other.description, description) ||
                 other.description == description));
   }
@@ -685,6 +705,7 @@ class _$HighlightResultImpl implements _HighlightResult {
     ratingChange,
     fatigueChange,
     confidenceChange,
+    momentumChange,
     description,
   );
 
@@ -716,6 +737,7 @@ abstract class _HighlightResult implements HighlightResult {
     final double ratingChange,
     final int fatigueChange,
     final int confidenceChange,
+    final int momentumChange,
     required final String description,
   }) = _$HighlightResultImpl;
 
@@ -740,6 +762,8 @@ abstract class _HighlightResult implements HighlightResult {
   int get fatigueChange; // 피로 변화
   @override
   int get confidenceChange; // 자신감 변화
+  @override
+  int get momentumChange; // 모멘텀 변화
   @override
   String get description;
 
@@ -1521,7 +1545,9 @@ mixin _$MatchSession {
       throw _privateConstructorUsedError; // 평점 누적
   int get rngSeed => throw _privateConstructorUsedError; // 랜덤 시드
   int get momentum => throw _privateConstructorUsedError; // 모멘텀 (-3 ~ +3)
-  int get consecutiveSuccess => throw _privateConstructorUsedError;
+  int get consecutiveSuccess => throw _privateConstructorUsedError; // 연속 성공 횟수
+  int get consecutiveFailure => throw _privateConstructorUsedError; // 연속 실패 횟수
+  int get lastShoutIndex => throw _privateConstructorUsedError;
 
   /// Serializes this MatchSession to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -1556,6 +1582,8 @@ abstract class $MatchSessionCopyWith<$Res> {
     int rngSeed,
     int momentum,
     int consecutiveSuccess,
+    int consecutiveFailure,
+    int lastShoutIndex,
   });
 
   $ScoreCopyWith<$Res> get score;
@@ -1592,6 +1620,8 @@ class _$MatchSessionCopyWithImpl<$Res, $Val extends MatchSession>
     Object? rngSeed = null,
     Object? momentum = null,
     Object? consecutiveSuccess = null,
+    Object? consecutiveFailure = null,
+    Object? lastShoutIndex = null,
   }) {
     return _then(
       _value.copyWith(
@@ -1655,6 +1685,14 @@ class _$MatchSessionCopyWithImpl<$Res, $Val extends MatchSession>
                 ? _value.consecutiveSuccess
                 : consecutiveSuccess // ignore: cast_nullable_to_non_nullable
                       as int,
+            consecutiveFailure: null == consecutiveFailure
+                ? _value.consecutiveFailure
+                : consecutiveFailure // ignore: cast_nullable_to_non_nullable
+                      as int,
+            lastShoutIndex: null == lastShoutIndex
+                ? _value.lastShoutIndex
+                : lastShoutIndex // ignore: cast_nullable_to_non_nullable
+                      as int,
           )
           as $Val,
     );
@@ -1706,6 +1744,8 @@ abstract class _$$MatchSessionImplCopyWith<$Res>
     int rngSeed,
     int momentum,
     int consecutiveSuccess,
+    int consecutiveFailure,
+    int lastShoutIndex,
   });
 
   @override
@@ -1743,6 +1783,8 @@ class __$$MatchSessionImplCopyWithImpl<$Res>
     Object? rngSeed = null,
     Object? momentum = null,
     Object? consecutiveSuccess = null,
+    Object? consecutiveFailure = null,
+    Object? lastShoutIndex = null,
   }) {
     return _then(
       _$MatchSessionImpl(
@@ -1806,6 +1848,14 @@ class __$$MatchSessionImplCopyWithImpl<$Res>
             ? _value.consecutiveSuccess
             : consecutiveSuccess // ignore: cast_nullable_to_non_nullable
                   as int,
+        consecutiveFailure: null == consecutiveFailure
+            ? _value.consecutiveFailure
+            : consecutiveFailure // ignore: cast_nullable_to_non_nullable
+                  as int,
+        lastShoutIndex: null == lastShoutIndex
+            ? _value.lastShoutIndex
+            : lastShoutIndex // ignore: cast_nullable_to_non_nullable
+                  as int,
       ),
     );
   }
@@ -1830,6 +1880,8 @@ class _$MatchSessionImpl implements _MatchSession {
     required this.rngSeed,
     this.momentum = 0,
     this.consecutiveSuccess = 0,
+    this.consecutiveFailure = 0,
+    this.lastShoutIndex = -1,
   }) : _highlights = highlights,
        _log = log;
 
@@ -1899,10 +1951,18 @@ class _$MatchSessionImpl implements _MatchSession {
   @override
   @JsonKey()
   final int consecutiveSuccess;
+  // 연속 성공 횟수
+  @override
+  @JsonKey()
+  final int consecutiveFailure;
+  // 연속 실패 횟수
+  @override
+  @JsonKey()
+  final int lastShoutIndex;
 
   @override
   String toString() {
-    return 'MatchSession(id: $id, fixtureId: $fixtureId, homeTeamId: $homeTeamId, awayTeamId: $awayTeamId, isHome: $isHome, phase: $phase, minute: $minute, score: $score, highlights: $highlights, currentHighlightIndex: $currentHighlightIndex, log: $log, ratingAccumulator: $ratingAccumulator, rngSeed: $rngSeed, momentum: $momentum, consecutiveSuccess: $consecutiveSuccess)';
+    return 'MatchSession(id: $id, fixtureId: $fixtureId, homeTeamId: $homeTeamId, awayTeamId: $awayTeamId, isHome: $isHome, phase: $phase, minute: $minute, score: $score, highlights: $highlights, currentHighlightIndex: $currentHighlightIndex, log: $log, ratingAccumulator: $ratingAccumulator, rngSeed: $rngSeed, momentum: $momentum, consecutiveSuccess: $consecutiveSuccess, consecutiveFailure: $consecutiveFailure, lastShoutIndex: $lastShoutIndex)';
   }
 
   @override
@@ -1934,7 +1994,11 @@ class _$MatchSessionImpl implements _MatchSession {
             (identical(other.momentum, momentum) ||
                 other.momentum == momentum) &&
             (identical(other.consecutiveSuccess, consecutiveSuccess) ||
-                other.consecutiveSuccess == consecutiveSuccess));
+                other.consecutiveSuccess == consecutiveSuccess) &&
+            (identical(other.consecutiveFailure, consecutiveFailure) ||
+                other.consecutiveFailure == consecutiveFailure) &&
+            (identical(other.lastShoutIndex, lastShoutIndex) ||
+                other.lastShoutIndex == lastShoutIndex));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -1956,6 +2020,8 @@ class _$MatchSessionImpl implements _MatchSession {
     rngSeed,
     momentum,
     consecutiveSuccess,
+    consecutiveFailure,
+    lastShoutIndex,
   );
 
   /// Create a copy of MatchSession
@@ -1989,6 +2055,8 @@ abstract class _MatchSession implements MatchSession {
     required final int rngSeed,
     final int momentum,
     final int consecutiveSuccess,
+    final int consecutiveFailure,
+    final int lastShoutIndex,
   }) = _$MatchSessionImpl;
 
   factory _MatchSession.fromJson(Map<String, dynamic> json) =
@@ -2023,7 +2091,11 @@ abstract class _MatchSession implements MatchSession {
   @override
   int get momentum; // 모멘텀 (-3 ~ +3)
   @override
-  int get consecutiveSuccess;
+  int get consecutiveSuccess; // 연속 성공 횟수
+  @override
+  int get consecutiveFailure; // 연속 실패 횟수
+  @override
+  int get lastShoutIndex;
 
   /// Create a copy of MatchSession
   /// with the given fields replaced by the non-null parameter values.

@@ -7,3 +7,4 @@ export 'match.dart';
 export 'command.dart';
 export 'game_snapshot.dart';
 export 'league.dart';
+export 'inbox.dart';

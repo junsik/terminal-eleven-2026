@@ -9,6 +9,8 @@ import '../model/team.dart';
 import '../model/match.dart';
 import '../model/game_snapshot.dart' as snapshot;
 import '../model/league.dart';
+import '../model/training_event.dart';
+import '../model/inbox.dart';
 
 part 'game_state.freezed.dart';
 part 'game_state.g.dart';
@@ -40,6 +42,9 @@ class GameState with _$GameState {
 
     /// 메타 정보
     required MetaState meta,
+
+    /// 인박스 상태
+    @Default(InboxState()) InboxState inbox,
   }) = _GameState;
 
   factory GameState.fromJson(Map<String, dynamic> json) =>
@@ -105,6 +110,9 @@ class PlayerState with _$PlayerState {
 
     /// 이번 주 남은 행동 횟수
     @Default(3) int weeklyActionsRemaining,
+
+    /// 마지막 훈련 이벤트 (UI 표시용)
+    TrainingEventResult? lastTrainingEvent,
   }) = _PlayerState;
 
   factory PlayerState.fromJson(Map<String, dynamic> json) =>
@@ -221,6 +229,33 @@ class MetaState with _$MetaState {
 
   factory MetaState.fromJson(Map<String, dynamic> json) =>
       _$MetaStateFromJson(json);
+}
+
+/// 인박스 상태
+@freezed
+class InboxState with _$InboxState {
+  const InboxState._();
+
+  const factory InboxState({
+    /// 모든 메시지 목록
+    @Default([]) List<InboxMessage> messages,
+  }) = _InboxState;
+
+  factory InboxState.fromJson(Map<String, dynamic> json) =>
+      _$InboxStateFromJson(json);
+
+  /// 안 읽은 메시지 개수
+  int get unreadCount => messages.where((m) => !m.isRead).length;
+
+  /// 안 읽은 메시지 있는지
+  bool get hasUnread => unreadCount > 0;
+
+  /// 최신순 정렬된 메시지
+  List<InboxMessage> get sortedMessages {
+    final sorted = [...messages];
+    sorted.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return sorted;
+  }
 }
 
 /// 기존 GameState enum을 UIScreen으로 변환

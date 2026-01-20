@@ -23,11 +23,15 @@ class ProbabilityRules {
   }
 
   /// 모멘텀 보너스 계산
-  static double momentumBonus(int momentum, int consecutiveSuccess) {
+  static double momentumBonus(int momentum, int consecutiveSuccess, int consecutiveFailure) {
     double bonus = momentum * MentalConfig.momentumRate;
     // 연속 성공 시 추가 보너스 (HOT 상태)
     if (consecutiveSuccess >= MentalConfig.hotStreakThreshold) {
       bonus += MentalConfig.hotStreakBonus;
+    }
+    // 연속 실패 시 페널티 (COLD 상태)
+    if (consecutiveFailure >= MentalConfig.coldStreakThreshold) {
+      bonus -= MentalConfig.coldStreakPenalty;
     }
     return bonus;
   }
@@ -140,6 +144,8 @@ class HighlightResolver {
     required int opponentRating,
     int momentum = 0,
     int consecutiveSuccess = 0,
+    int consecutiveFailure = 0,
+    required bool isClutchTime,
   }) {
     final eventProb = EventProbability.defaults[event.type] ??
         const EventProbability(base: 0.5, statWeights: {});
@@ -154,7 +160,8 @@ class HighlightResolver {
       opponentRating: opponentRating,
       momentum: momentum,
       consecutiveSuccess: consecutiveSuccess,
-      isClutch: event.type == HighlightType.clutchChance,
+      consecutiveFailure: consecutiveFailure,
+      isClutch: event.type == HighlightType.clutchChance || isClutchTime,
     );
 
     final roll = _random.nextDouble();
@@ -180,6 +187,7 @@ class HighlightResolver {
     required int opponentRating,
     required int momentum,
     required int consecutiveSuccess,
+    required int consecutiveFailure,
     required bool isClutch,
   }) {
     double p = base;
@@ -208,8 +216,8 @@ class HighlightResolver {
     // 자신감 보너스
     p += ProbabilityRules.confidenceBonus(status.confidence);
 
-    // 모멘텀 보너스
-    p += ProbabilityRules.momentumBonus(momentum, consecutiveSuccess);
+    // 모멘텀 보너스 (HOT/COLD 상태 포함)
+    p += ProbabilityRules.momentumBonus(momentum, consecutiveSuccess, consecutiveFailure);
 
     // 상대 난이도 (Config 기반)
     p -= (opponentRating - OpponentConfig.baseRating) / OpponentConfig.difficultyDivisor;
@@ -221,11 +229,30 @@ class HighlightResolver {
       p -= CommandConfig.riskyPlayPenalty;
     }
 
-    // 클러치 상황 긴장감
+    // 특수 슛 보정
+    if (command == CommandType.panenka) {
+      p -= 0.25; // 기본 성공률 대폭 감소
+      if (stats.composure > 80) p += 0.15; // 강심장은 보정
+    } else if (command == CommandType.chipShot) {
+      p -= 0.15;
+      p += (stats.ballControl / 100) * 0.1; // 볼컨트롤 영향
+    } else if (command == CommandType.knuckleShot) {
+      p -= 0.20;
+      p += (_random.nextDouble() * 0.3); // 랜덤성 높음
+    } else if (command == CommandType.powerShot) {
+      p += (stats.shooting / 100) * 0.1; // 슈팅력 영향 높음
+      p -= 0.05; // 정확도 감소
+    }
+
+    // 클러치 상황 긴장감 (Clutch Time or Clutch Chance)
     if (isClutch) {
       // 침착성이 낮으면 더 큰 페널티
       if (stats.composure < CommandConfig.lowComposureThreshold) {
         p -= CommandConfig.lowComposurePenalty;
+      }
+      // 강심장 보너스 (New)
+      else if (stats.composure > 80) {
+        p += 0.10; // 위기/기회에 강함
       }
     }
 
@@ -248,6 +275,7 @@ class HighlightResolver {
     double ratingChange = 0;
     int fatigueChange = RewardConfig.baseFatigueGain;
     int confidenceChange = 0;
+    int momentumChange = 0;
     bool isGoal = false;
     bool isAssist = false;
     bool isYellowCard = false;
@@ -259,17 +287,25 @@ class HighlightResolver {
     final multiplier = eventProb.riskMultiplier;
 
     if (success) {
+      // 기본 성공 모멘텀 (switch문에서 덮어쓰지 않는 경우 사용)
+      momentumChange = MomentumConfig.successGain;
+
       switch (event.type) {
         case HighlightType.oneOnOne:
         case HighlightType.edgeOfBoxShot:
         case HighlightType.setPieceRebound:
-          if (command == CommandType.shoot) {
+          if (command == CommandType.shoot ||
+              command == CommandType.powerShot ||
+              command == CommandType.curvedShot ||
+              command == CommandType.knuckleShot) {
             isGoal = true;
             ratingChange = RewardConfig.goalRating * multiplier;
             confidenceChange = ConfidenceConfig.goalConfidence;
+            momentumChange = MomentumConfig.goalGain; // Ensure goal gain
           } else if (command == CommandType.pass) {
             isAssist = _random.nextDouble() < RewardConfig.assistProbability;
             ratingChange = isAssist ? RewardConfig.assistRating : RewardConfig.goodSuccessRating;
+            if (isAssist) momentumChange = MomentumConfig.assistGain;
           } else {
             ratingChange = RewardConfig.normalSuccessRating;
           }
@@ -280,6 +316,14 @@ class HighlightResolver {
           ratingChange = RewardConfig.goalRating * multiplier;
           confidenceChange = ConfidenceConfig.penaltySuccessConfidence;
           fatigueChange = RewardConfig.penaltyFatigueGain;
+          momentumChange = MomentumConfig.goalGain;
+          
+          // 파넨카 성공 시 대박
+          if (command == CommandType.panenka) {
+            confidenceChange += 5; // 자신감 폭발
+            momentumChange += 2; // 분위기 압도
+            ratingChange += 1.0;
+          }
           break;
 
         case HighlightType.clutchChance:
@@ -287,10 +331,12 @@ class HighlightResolver {
             isGoal = true;
             ratingChange = RewardConfig.goalRating * multiplier;
             confidenceChange = ConfidenceConfig.clutchGoalConfidence;
+            momentumChange = MomentumConfig.goalGain;
           } else if (command == CommandType.pass) {
             isAssist = _random.nextDouble() < RewardConfig.clutchAssistProbability;
             ratingChange = isAssist ? 10.0 : RewardConfig.assistRating;
             confidenceChange = ConfidenceConfig.clutchAssistConfidence;
+            if (isAssist) momentumChange = MomentumConfig.assistGain;
           } else {
             ratingChange = RewardConfig.goodSuccessRating;
           }
@@ -308,28 +354,47 @@ class HighlightResolver {
         case HighlightType.pressing:
           ratingChange = RewardConfig.normalSuccessRating;
           fatigueChange = RewardConfig.pressingFatigueGain;
+          momentumChange = MomentumConfig.defenseSuccessGain;
+          break;
+
+        case HighlightType.defensiveCover:
+        case HighlightType.looseBall:
+          ratingChange = RewardConfig.normalSuccessRating;
+          momentumChange = MomentumConfig.defenseSuccessGain;
           break;
 
         default:
           ratingChange = 1.5;
       }
     } else {
+      // 실패 시 모멘텀 하락
+      momentumChange = MomentumConfig.failureLoss;
+
       // 실패 시 결과
       switch (event.type) {
         case HighlightType.oneOnOne:
         case HighlightType.setPieceRebound:
           ratingChange = RewardConfig.bigChanceFailurePenalty;
           confidenceChange = ConfidenceConfig.bigChanceFailureConfidence;
+          momentumChange = MomentumConfig.bigChanceMissLoss;
           break;
 
         case HighlightType.penaltyKick:
           ratingChange = RewardConfig.penaltyMissPenalty;
           confidenceChange = ConfidenceConfig.penaltyMissConfidence;
+          momentumChange = MomentumConfig.bigChanceMissLoss;
+          
+          if (command == CommandType.panenka) {
+            ratingChange -= 1.5; // 추가 감점
+            confidenceChange -= 5;
+            momentumChange -= 1;
+          }
           break;
 
         case HighlightType.clutchChance:
           ratingChange = RewardConfig.clutchMissPenalty;
           confidenceChange = ConfidenceConfig.clutchMissConfidence;
+          momentumChange = MomentumConfig.bigChanceMissLoss;
           break;
 
         case HighlightType.pressing:
@@ -343,6 +408,10 @@ class HighlightResolver {
             }
           } else {
             ratingChange = RewardConfig.failurePenalty;
+          }
+          // 공 소유권 잃음
+          if (command == CommandType.dribble) {
+             momentumChange = MomentumConfig.possessionLostLoss;
           }
           break;
 
@@ -363,7 +432,7 @@ class HighlightResolver {
 
     // 피로도에 따른 추가 피로 (Config 기반)
     if (status.fatigue > FatigueConfig.extraFatigueThreshold) {
-      fatigueChange += FatigueConfig.extraFatigueAmount;
+      fatigueChange += FatigueConfig.extraFatigueAmount.round();
     }
 
     // 새 코멘터리 시스템 사용
@@ -388,6 +457,7 @@ class HighlightResolver {
       ratingChange: ratingChange,
       fatigueChange: fatigueChange,
       confidenceChange: confidenceChange,
+      momentumChange: momentumChange,
       description: description,
     );
   }

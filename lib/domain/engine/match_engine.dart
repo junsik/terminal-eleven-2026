@@ -36,7 +36,20 @@ class MatchEngine extends GameEngine<MatchAction> {
       ProceedToNextHighlight() => _proceedToNextHighlight(state),
       FinishMatch() => _finishMatch(state),
       SpectateMatch() => _spectateMatch(state, seed),
+      ExecuteTacticalShout(:final shoutType) => _executeTacticalShout(state, shoutType),
     };
+  }
+
+  /// 전술 외침 실행 Wrapper
+  GameState _executeTacticalShout(GameState state, CommandType shoutType) {
+    var match = state.ui.activeMatch;
+    if (match == null) return state;
+
+    match = processTacticalShout(match, shoutType);
+
+    return state.copyWith(
+      ui: state.ui.copyWith(activeMatch: match),
+    );
   }
 
   /// 경기 시작
@@ -136,6 +149,10 @@ class MatchEngine extends GameEngine<MatchAction> {
       stats: state.player.stats,
       status: state.player.status,
       opponentRating: opponent?.defenseRating ?? 50,
+      momentum: match.momentum,
+      consecutiveSuccess: match.consecutiveSuccess,
+      consecutiveFailure: match.consecutiveFailure,
+      isClutchTime: match.isClutchTime,
     );
 
     // 스코어 업데이트
@@ -197,12 +214,32 @@ class MatchEngine extends GameEngine<MatchAction> {
       ));
     }
 
+    // 모멘텀 및 연속 성공/실패 업데이트
+    // 성공 시: 연속 성공 +1, 연속 실패 절반으로 감소 (완만한 회복)
+    // 실패 시: 연속 실패 +1, 연속 성공 절반으로 감소 (완만한 하락)
+    final int newConsecutiveSuccess;
+    final int newConsecutiveFailure;
+
+    if (result.success) {
+      newConsecutiveSuccess = match.consecutiveSuccess + 1;
+      newConsecutiveFailure = (match.consecutiveFailure / 2).floor();
+    } else {
+      newConsecutiveSuccess = (match.consecutiveSuccess / 2).floor();
+      newConsecutiveFailure = match.consecutiveFailure + 1;
+    }
+
+    final newMomentum = (match.momentum + result.momentumChange)
+        .clamp(MomentumConfig.minMomentum, MomentumConfig.maxMomentum);
+
     match = match.copyWith(
       phase: MatchPhase.highlightResult,
       minute: currentHighlight.minute,
       score: score,
       highlights: updatedHighlights,
       ratingAccumulator: accumulator,
+      momentum: newMomentum,
+      consecutiveSuccess: newConsecutiveSuccess,
+      consecutiveFailure: newConsecutiveFailure,
       log: newLog,
     );
 
@@ -435,5 +472,57 @@ class MatchEngine extends GameEngine<MatchAction> {
     expectedGoals *= SimulationConfig.randomBase + random.nextDouble() * SimulationConfig.randomVariance;
 
     return expectedGoals.round().clamp(0, SimulationConfig.maxGoals);
+  }
+
+  /// 전술 외침 처리
+  ///
+  /// 같은 하이라이트에서 중복 외침 방지 (쿨타임)
+  MatchSession processTacticalShout(MatchSession match, CommandType shout) {
+    // 쿨타임 체크: 같은 하이라이트에서 이미 외침을 사용했으면 무시
+    if (match.lastShoutIndex == match.currentHighlightIndex) {
+      return match; // 이미 이 하이라이트에서 외침을 사용함
+    }
+
+    var newMomentum = match.momentum;
+    var logText = '';
+
+    switch (shout) {
+      case CommandType.shoutEncourage:
+        newMomentum += ShoutConfig.encourageMomentumGain;
+        logText = '🗣️ "할 수 있어!" 동료들을 격려합니다. (분위기 상승)';
+        break;
+      case CommandType.shoutDemand:
+        newMomentum += ShoutConfig.demandMomentumGain;
+        logText = '🗣️ "정신 차려!" 강력하게 지시합니다. (분위기 급상승)';
+        // TODO: Confidence cost implementation if needed in MatchSession
+        break;
+      case CommandType.shoutCalm:
+        if (newMomentum < 0) {
+          newMomentum += ShoutConfig.calmMomentumRestoration;
+          logText = '🗣️ "침착해!" 흥분한 동료들을 진정시킵니다. (분위기 회복)';
+        } else {
+          logText = '🗣️ "천천히 하자." 템포를 조절합니다.';
+        }
+        break;
+      default:
+        return match;
+    }
+
+    // Clamp
+    newMomentum = newMomentum.clamp(MomentumConfig.minMomentum, MomentumConfig.maxMomentum);
+
+    // Log addition
+    final newLog = List<LogLine>.from(match.log)
+      ..add(LogLine(
+        type: LogType.system,
+        text: logText,
+        minute: match.minute,
+      ));
+
+    return match.copyWith(
+      momentum: newMomentum,
+      log: newLog,
+      lastShoutIndex: match.currentHighlightIndex,
+    );
   }
 }

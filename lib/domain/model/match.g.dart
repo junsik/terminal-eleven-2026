@@ -77,6 +77,7 @@ _$HighlightResultImpl _$$HighlightResultImplFromJson(
   ratingChange: (json['ratingChange'] as num?)?.toDouble() ?? 0.0,
   fatigueChange: (json['fatigueChange'] as num?)?.toInt() ?? 0,
   confidenceChange: (json['confidenceChange'] as num?)?.toInt() ?? 0,
+  momentumChange: (json['momentumChange'] as num?)?.toInt() ?? 0,
   description: json['description'] as String,
 );
 
@@ -92,6 +93,7 @@ Map<String, dynamic> _$$HighlightResultImplToJson(
   'ratingChange': instance.ratingChange,
   'fatigueChange': instance.fatigueChange,
   'confidenceChange': instance.confidenceChange,
+  'momentumChange': instance.momentumChange,
   'description': instance.description,
 };
 
@@ -191,6 +193,8 @@ _$MatchSessionImpl _$$MatchSessionImplFromJson(Map<String, dynamic> json) =>
       rngSeed: (json['rngSeed'] as num).toInt(),
       momentum: (json['momentum'] as num?)?.toInt() ?? 0,
       consecutiveSuccess: (json['consecutiveSuccess'] as num?)?.toInt() ?? 0,
+      consecutiveFailure: (json['consecutiveFailure'] as num?)?.toInt() ?? 0,
+      lastShoutIndex: (json['lastShoutIndex'] as num?)?.toInt() ?? -1,
     );
 
 Map<String, dynamic> _$$MatchSessionImplToJson(_$MatchSessionImpl instance) =>
@@ -210,6 +214,8 @@ Map<String, dynamic> _$$MatchSessionImplToJson(_$MatchSessionImpl instance) =>
       'rngSeed': instance.rngSeed,
       'momentum': instance.momentum,
       'consecutiveSuccess': instance.consecutiveSuccess,
+      'consecutiveFailure': instance.consecutiveFailure,
+      'lastShoutIndex': instance.lastShoutIndex,
     };
 
 const _$MatchPhaseEnumMap = {

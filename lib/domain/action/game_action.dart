@@ -3,7 +3,7 @@
 /// 모든 상태 변경은 Action을 통해 발생한다.
 /// Action → Engine → 새 State
 
-import '../model/game_snapshot.dart' show TrainingType;
+import '../model/game_snapshot.dart' show TrainingType, TrainingIntensity;
 import '../model/command.dart';
 
 /// 모든 게임 액션의 기본 클래스
@@ -23,7 +23,8 @@ sealed class TrainingAction extends GameAction {
 /// 훈련 실행
 class ExecuteTraining extends TrainingAction {
   final TrainingType type;
-  const ExecuteTraining(this.type);
+  final TrainingIntensity intensity;
+  const ExecuteTraining(this.type, {this.intensity = TrainingIntensity.normal});
 }
 
 // ============================================================================
@@ -59,6 +60,12 @@ class ProceedToNextHighlight extends MatchAction {
 /// 경기 종료 처리
 class FinishMatch extends MatchAction {
   const FinishMatch();
+}
+
+/// 전술 외침 실행 (New)
+class ExecuteTacticalShout extends MatchAction {
+  final CommandType shoutType;
+  const ExecuteTacticalShout(this.shoutType);
 }
 
 /// 경기 관전 (부상 시)
@@ -204,6 +211,49 @@ class SetActiveMatch extends UIAction {
 /// 경기 후 화면으로 이동
 class GoToPostMatch extends UIAction {
   const GoToPostMatch();
+}
+
+// ============================================================================
+// Inbox Actions
+// ============================================================================
+
+/// 인박스 관련 액션
+sealed class InboxAction extends GameAction {
+  const InboxAction();
+}
+
+/// 메시지 추가
+class AddInboxMessage extends InboxAction {
+  final String senderType; // coach, agent, fan, media, system
+  final String category; // welcome, training, matchResult, levelUp, etc.
+  final String subject;
+  final String content;
+  final String? customSenderName;
+
+  const AddInboxMessage({
+    required this.senderType,
+    required this.category,
+    required this.subject,
+    required this.content,
+    this.customSenderName,
+  });
+}
+
+/// 메시지 읽음 처리
+class MarkMessageAsRead extends InboxAction {
+  final String messageId;
+  const MarkMessageAsRead(this.messageId);
+}
+
+/// 모든 메시지 읽음 처리
+class MarkAllMessagesAsRead extends InboxAction {
+  const MarkAllMessagesAsRead();
+}
+
+/// 메시지 삭제
+class DeleteInboxMessage extends InboxAction {
+  final String messageId;
+  const DeleteInboxMessage(this.messageId);
 }
 
 // ============================================================================
