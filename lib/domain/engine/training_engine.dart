@@ -4,6 +4,7 @@
 /// - 스탯 변경 계산
 /// - 피로도 계산
 /// - 부상 체크
+/// - 특별 훈련 이벤트
 
 import 'dart:math';
 import 'base_engine.dart';
@@ -11,7 +12,8 @@ import '../config/balance_config.dart';
 import '../state/game_state.dart';
 import '../action/game_action.dart';
 import '../model/player.dart';
-import '../model/game_snapshot.dart' show TrainingType;
+import '../model/game_snapshot.dart' show TrainingType, TrainingIntensity;
+import '../model/training_event.dart';
 
 /// 훈련 엔진
 class TrainingEngine extends GameEngine<TrainingAction> {
@@ -21,12 +23,18 @@ class TrainingEngine extends GameEngine<TrainingAction> {
   @override
   GameState process(GameState state, TrainingAction action, int seed) {
     return switch (action) {
-      ExecuteTraining(:final type) => _executeTraining(state, type, seed),
+      ExecuteTraining(:final type, :final intensity) =>
+        _executeTraining(state, type, intensity, seed),
     };
   }
 
   /// 훈련 실행
-  GameState _executeTraining(GameState state, TrainingType type, int seed) {
+  GameState _executeTraining(
+    GameState state,
+    TrainingType type,
+    TrainingIntensity intensity,
+    int seed,
+  ) {
     final random = Random(seed);
     final player = state.player;
     final character = player.character;
@@ -36,28 +44,49 @@ class TrainingEngine extends GameEngine<TrainingAction> {
       return state; // 변경 없이 반환
     }
 
-    // 훈련 효과 계산
+    // 특별 이벤트 체크 (휴식/재활 제외)
+    final event = _checkForEvent(type, random);
+
+    // 훈련 효과 계산 (이벤트 적용)
     final result = _calculateTrainingEffect(
       type: type,
+      intensity: intensity,
       currentStats: character.stats,
       currentStatus: character.status,
       random: random,
+      event: event,
     );
 
     // 부상 체크
     final injuryResult = _checkInjury(
       type: type,
+      intensity: intensity,
       fatigue: result.newStatus.fatigue,
       random: random,
     );
 
     // 최종 상태 적용
-    final finalStatus = injuryResult.hasInjury
+    var finalStatus = injuryResult.hasInjury
         ? result.newStatus.copyWith(
             injury: injuryResult.injury!,
             injuryWeeksRemaining: injuryResult.weeks!,
           )
         : result.newStatus;
+
+    // 이벤트에 의한 자신감 변화 적용
+    if (event != null) {
+      finalStatus = finalStatus.copyWith(
+        confidence: (finalStatus.confidence + event.confidenceChange).clamp(-3, 3),
+      );
+    }
+
+    // 커리어 데이터 업데이트 (이벤트에 의한 신뢰도 변화)
+    var newCareer = character.career;
+    if (event != null && event.trustChange != 0) {
+      newCareer = newCareer.copyWith(
+        trust: (newCareer.trust + event.trustChange).clamp(0, 100),
+      );
+    }
 
     // 새 상태 반환
     return state.copyWith(
@@ -65,26 +94,109 @@ class TrainingEngine extends GameEngine<TrainingAction> {
         character: character.copyWith(
           stats: result.newStats,
           status: finalStatus,
+          career: newCareer,
         ),
         weeklyActionsRemaining: player.weeklyActionsRemaining - 1,
+        lastTrainingEvent: event,
       ),
       meta: state.meta.copyWith(savedAt: DateTime.now()),
     );
   }
 
+  /// 특별 이벤트 체크
+  TrainingEventResult? _checkForEvent(TrainingType type, Random random) {
+    // 휴식/재활은 이벤트 없음
+    if (_isRestType(type)) return null;
+
+    // 이벤트 발생 확률 체크
+    if (random.nextDouble() > TrainingConfig.eventProbability) return null;
+
+    // 랜덤 이벤트 선택
+    final events = TrainingEventType.values;
+    final selectedEvent = events[random.nextInt(events.length)];
+
+    return _createEventResult(selectedEvent, random);
+  }
+
+  /// 이벤트 결과 생성
+  TrainingEventResult _createEventResult(TrainingEventType type, Random random) {
+    switch (type) {
+      case TrainingEventType.coachGuidance:
+        return TrainingEventResult(
+          eventType: type,
+          statMultiplier: TrainingConfig.coachGuidanceStatBonus,
+          message: '코치가 직접 1:1 지도를 해주었습니다!',
+        );
+
+      case TrainingEventType.rivalCompetition:
+        // 50% 확률로 승리/패배
+        final won = random.nextBool();
+        return TrainingEventResult(
+          eventType: type,
+          confidenceChange: won
+              ? TrainingConfig.rivalWinConfidence.toInt()
+              : TrainingConfig.rivalLoseConfidence.toInt(),
+          message: won ? '라이벌과의 경쟁에서 승리했습니다!' : '라이벌에게 졌습니다...',
+        );
+
+      case TrainingEventType.teamTactics:
+        return TrainingEventResult(
+          eventType: type,
+          trustChange: TrainingConfig.teamTacticsTrustBonus,
+          message: '팀 전술 훈련에 적극적으로 참여했습니다!',
+        );
+
+      case TrainingEventType.perfectForm:
+        return TrainingEventResult(
+          eventType: type,
+          fatigueMultiplier: TrainingConfig.perfectFormFatigueMultiplier,
+          message: '오늘따라 몸이 가볍습니다!',
+        );
+
+      case TrainingEventType.minorSetback:
+        return TrainingEventResult(
+          eventType: type,
+          statMultiplier: TrainingConfig.minorSetbackStatMultiplier,
+          message: '컨디션이 좋지 않아 훈련 효과가 떨어졌습니다.',
+        );
+    }
+  }
+
   /// 훈련 효과 계산 (순수 함수)
   TrainingResult _calculateTrainingEffect({
     required TrainingType type,
+    required TrainingIntensity intensity,
     required PlayerStats currentStats,
     required PlayerStatus currentStatus,
     required Random random,
+    TrainingEventResult? event,
   }) {
     var newStats = currentStats;
     var newStatus = currentStatus;
 
-    // 스탯 증가량 (Config 기반)
-    final statGainRange = TrainingConfig.statGainMax - TrainingConfig.statGainMin + 1;
-    final statGain = TrainingConfig.statGainMin + random.nextInt(statGainRange);
+    // 강도별 배율 가져오기
+    final (statMult, fatigueMult) = _getIntensityMultipliers(intensity);
+
+    // 이벤트 배율 적용
+    final eventStatMult = event?.statMultiplier ?? 1.0;
+    final eventFatigueMult = event?.fatigueMultiplier ?? 1.0;
+
+    // 컨디션 기반 효율 (피로, 자신감)
+    final conditionEfficiency = _getConditionEfficiency(
+      currentStatus.fatigue,
+      currentStatus.confidence,
+    );
+
+    // 스탯 증가량 (Config 기반 + 강도 배율 + 이벤트 배율 + 컨디션 효율)
+    final statGainRange =
+        TrainingConfig.statGainMax - TrainingConfig.statGainMin + 1;
+    final baseStatGain =
+        TrainingConfig.statGainMin + random.nextInt(statGainRange);
+    final statGain =
+        (baseStatGain * statMult * eventStatMult * conditionEfficiency).round();
+
+    // 최종 피로 배율
+    final finalFatigueMult = fatigueMult * eventFatigueMult;
 
     switch (type) {
       case TrainingType.shooting:
@@ -92,7 +204,9 @@ class TrainingEngine extends GameEngine<TrainingAction> {
           shooting: (newStats.shooting + statGain).clamp(0, 100),
         );
         newStatus = newStatus.copyWith(
-          fatigue: (newStatus.fatigue + TrainingConfig.fatigueDefault).clamp(0, 100),
+          fatigue: (newStatus.fatigue +
+                  (TrainingConfig.fatigueDefault * finalFatigueMult).round())
+              .clamp(0, 100),
         );
 
       case TrainingType.passing:
@@ -100,7 +214,9 @@ class TrainingEngine extends GameEngine<TrainingAction> {
           passing: (newStats.passing + statGain).clamp(0, 100),
         );
         newStatus = newStatus.copyWith(
-          fatigue: (newStatus.fatigue + TrainingConfig.fatigueDefault).clamp(0, 100),
+          fatigue: (newStatus.fatigue +
+                  (TrainingConfig.fatigueDefault * finalFatigueMult).round())
+              .clamp(0, 100),
         );
 
       case TrainingType.dribbling:
@@ -108,7 +224,9 @@ class TrainingEngine extends GameEngine<TrainingAction> {
           ballControl: (newStats.ballControl + statGain).clamp(0, 100),
         );
         newStatus = newStatus.copyWith(
-          fatigue: (newStatus.fatigue + TrainingConfig.fatigueDefault).clamp(0, 100),
+          fatigue: (newStatus.fatigue +
+                  (TrainingConfig.fatigueDefault * finalFatigueMult).round())
+              .clamp(0, 100),
         );
 
       case TrainingType.positioning:
@@ -116,7 +234,9 @@ class TrainingEngine extends GameEngine<TrainingAction> {
           positioning: (newStats.positioning + statGain).clamp(0, 100),
         );
         newStatus = newStatus.copyWith(
-          fatigue: (newStatus.fatigue + TrainingConfig.fatigueDefault).clamp(0, 100),
+          fatigue: (newStatus.fatigue +
+                  (TrainingConfig.fatigueDefault * finalFatigueMult).round())
+              .clamp(0, 100),
         );
 
       case TrainingType.stamina:
@@ -124,7 +244,9 @@ class TrainingEngine extends GameEngine<TrainingAction> {
           stamina: (newStats.stamina + statGain).clamp(0, 100),
         );
         newStatus = newStatus.copyWith(
-          fatigue: (newStatus.fatigue + TrainingConfig.fatigueStamina).clamp(0, 100),
+          fatigue: (newStatus.fatigue +
+                  (TrainingConfig.fatigueStamina * finalFatigueMult).round())
+              .clamp(0, 100),
         );
 
       case TrainingType.composure:
@@ -132,19 +254,28 @@ class TrainingEngine extends GameEngine<TrainingAction> {
           composure: (newStats.composure + statGain).clamp(0, 100),
         );
         newStatus = newStatus.copyWith(
-          fatigue: (newStatus.fatigue + TrainingConfig.fatigueComposure).clamp(0, 100),
+          fatigue: (newStatus.fatigue +
+                  (TrainingConfig.fatigueComposure * finalFatigueMult).round())
+              .clamp(0, 100),
         );
 
       case TrainingType.rest:
+        // 휴식은 강도 영향 없음
         newStatus = newStatus.copyWith(
-          fatigue: (newStatus.fatigue - TrainingConfig.restFatigueRecovery).clamp(0, 100),
-          confidence: (newStatus.confidence + TrainingConfig.restConfidenceGain).clamp(-3, 3),
+          fatigue:
+              (newStatus.fatigue - TrainingConfig.restFatigueRecovery).clamp(0, 100),
+          confidence:
+              (newStatus.confidence + TrainingConfig.restConfidenceGain).clamp(-3, 3),
         );
 
       case TrainingType.rehab:
+        // 재활도 강도 영향 없음
         newStatus = newStatus.copyWith(
-          fatigue: (newStatus.fatigue - TrainingConfig.rehabFatigueRecovery).clamp(0, 100),
-          injuryWeeksRemaining: (newStatus.injuryWeeksRemaining - TrainingConfig.rehabWeeksRecovery).clamp(0, 10),
+          fatigue:
+              (newStatus.fatigue - TrainingConfig.rehabFatigueRecovery).clamp(0, 100),
+          injuryWeeksRemaining:
+              (newStatus.injuryWeeksRemaining - TrainingConfig.rehabWeeksRecovery)
+                  .clamp(0, 10),
         );
         // 부상 완치 체크
         if (newStatus.injuryWeeksRemaining == 0) {
@@ -155,9 +286,47 @@ class TrainingEngine extends GameEngine<TrainingAction> {
     return TrainingResult(newStats: newStats, newStatus: newStatus);
   }
 
+  /// 강도별 배율 반환 (스탯배율, 피로배율)
+  (double, double) _getIntensityMultipliers(TrainingIntensity intensity) {
+    return switch (intensity) {
+      TrainingIntensity.light => (
+          TrainingConfig.lightIntensityStatMultiplier,
+          TrainingConfig.lightIntensityFatigueMultiplier,
+        ),
+      TrainingIntensity.normal => (
+          TrainingConfig.normalIntensityStatMultiplier,
+          TrainingConfig.normalIntensityFatigueMultiplier,
+        ),
+      TrainingIntensity.intense => (
+          TrainingConfig.intenseIntensityStatMultiplier,
+          TrainingConfig.intenseIntensityFatigueMultiplier,
+        ),
+    };
+  }
+
+  /// 컨디션 기반 효율 배율 계산
+  double _getConditionEfficiency(int fatigue, int confidence) {
+    double efficiency = 1.0;
+
+    // 피로도 패널티 (50 이상부터 효율 감소)
+    if (fatigue > TrainingConfig.fatigueEfficiencyThreshold) {
+      final fatigueOver = fatigue - TrainingConfig.fatigueEfficiencyThreshold;
+      final penalty = (fatigueOver * TrainingConfig.fatigueEfficiencyPenaltyRate)
+          .clamp(0.0, TrainingConfig.maxFatigueEfficiencyPenalty);
+      efficiency -= penalty;
+    }
+
+    // 자신감 보너스/패널티 (-3 ~ +3)
+    efficiency += confidence * TrainingConfig.confidenceEfficiencyRate;
+
+    // 최소 50% 효율 보장
+    return efficiency.clamp(0.5, 1.5);
+  }
+
   /// 부상 체크 (순수 함수)
   InjuryCheckResult _checkInjury({
     required TrainingType type,
+    required TrainingIntensity intensity,
     required int fatigue,
     required Random random,
   }) {
@@ -166,10 +335,19 @@ class TrainingEngine extends GameEngine<TrainingAction> {
       return const InjuryCheckResult.none();
     }
 
-    // 피로 임계값 이상일 때 부상 확률 체크 (Config 기반)
+    // 강도별 부상 확률 배율
+    final injuryMult = switch (intensity) {
+      TrainingIntensity.light => TrainingConfig.lightIntensityInjuryMultiplier,
+      TrainingIntensity.normal => TrainingConfig.normalIntensityInjuryMultiplier,
+      TrainingIntensity.intense => TrainingConfig.intenseIntensityInjuryMultiplier,
+    };
+
+    // 피로 임계값 이상일 때 부상 확률 체크 (Config 기반 + 강도 배율)
+    final adjustedProbability = TrainingConfig.injuryProbability * injuryMult;
     if (fatigue > TrainingConfig.injuryFatigueThreshold &&
-        random.nextDouble() < TrainingConfig.injuryProbability) {
-      final weeksRange = TrainingConfig.injuryWeeksMax - TrainingConfig.injuryWeeksMin + 1;
+        random.nextDouble() < adjustedProbability) {
+      final weeksRange =
+          TrainingConfig.injuryWeeksMax - TrainingConfig.injuryWeeksMin + 1;
       final weeks = TrainingConfig.injuryWeeksMin + random.nextInt(weeksRange);
       return InjuryCheckResult.injured(InjuryStatus.minor, weeks);
     }

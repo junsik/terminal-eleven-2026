@@ -42,6 +42,26 @@ enum CommandType {
   askRole, // 역할 질문
   @JsonValue('ignore')
   ignore, // 무시
+
+  // 세트피스 / 킥 옵션
+  @JsonValue('chipShot')
+  chipShot, // 칩슛
+  @JsonValue('knuckleShot')
+  knuckleShot, // 무회전
+  @JsonValue('panenka')
+  panenka, // 파넨카
+  @JsonValue('powerShot')
+  powerShot, // 강슛
+  @JsonValue('curvedShot')
+  curvedShot, // 감아차기
+  
+  // 전술 외침
+  @JsonValue('shoutEncourage')
+  shoutEncourage, // 격려
+  @JsonValue('shoutDemand')
+  shoutDemand, // 질책/요구
+  @JsonValue('shoutCalm')
+  shoutCalm, // 진정
 }
 
 /// 커맨드 정보
@@ -90,6 +110,22 @@ extension CommandTypeX on CommandType {
         return '역할 질문';
       case CommandType.ignore:
         return '무시';
+      case CommandType.chipShot:
+        return '칩슛';
+      case CommandType.knuckleShot:
+        return '무회전';
+      case CommandType.panenka:
+        return '파넨카';
+      case CommandType.powerShot:
+        return '강슛';
+      case CommandType.curvedShot:
+        return '감아차기';
+      case CommandType.shoutEncourage:
+        return '격려';
+      case CommandType.shoutDemand:
+        return '질책';
+      case CommandType.shoutCalm:
+        return '진정';
     }
   }
 
@@ -124,6 +160,22 @@ extension CommandTypeX on CommandType {
         return '자신의 역할에 대해 질문합니다';
       case CommandType.ignore:
         return '코치의 지시를 무시합니다';
+      case CommandType.chipShot:
+        return '키퍼 키를 넘기는 칩슛을 시도합니다';
+      case CommandType.knuckleShot:
+        return '예측 불가능한 무회전 슛을 날립니다';
+      case CommandType.panenka:
+        return '대범하게 중앙으로 툭 찹니다 (높은 위험)';
+      case CommandType.powerShot:
+        return '골망을 찢을 듯한 강슛을 날립니다';
+      case CommandType.curvedShot:
+        return '수비를 피해 구석으로 감아찹니다';
+      case CommandType.shoutEncourage:
+        return '동료들의 사기를 북돋습니다';
+      case CommandType.shoutDemand:
+        return '더 좋은 플레이를 강력하게 요구합니다';
+      case CommandType.shoutCalm:
+        return '흥분한 동료들을 진정시킵니다';
     }
   }
 
@@ -145,7 +197,9 @@ extension CommandTypeX on CommandType {
   bool get isRisky =>
       this == CommandType.tackle ||
       this == CommandType.forcePlay ||
-      this == CommandType.dribble;
+      this == CommandType.dribble ||
+      this == CommandType.panenka || // 파넨카는 매우 위험
+      this == CommandType.knuckleShot;
 }
 
 /// 커맨드 String -> CommandType 변환
@@ -184,6 +238,26 @@ CommandType? commandTypeFromString(String value) {
       return CommandType.askRole;
     case 'ignore':
       return CommandType.ignore;
+    case 'chipshot':
+    case 'chip_shot':
+      return CommandType.chipShot;
+    case 'knuckleshot':
+    case 'knuckle_shot':
+      return CommandType.knuckleShot;
+    case 'panenka':
+      return CommandType.panenka;
+    case 'powershot':
+    case 'power_shot':
+      return CommandType.powerShot;
+    case 'curvedshot':
+    case 'curved_shot':
+      return CommandType.curvedShot;
+    case 'shoutencourage':
+      return CommandType.shoutEncourage;
+    case 'shoutdemand':
+      return CommandType.shoutDemand;
+    case 'shoutcalm':
+      return CommandType.shoutCalm;
     default:
       return null;
   }

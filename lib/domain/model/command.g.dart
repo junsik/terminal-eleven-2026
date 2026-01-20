@@ -37,4 +37,12 @@ const _$CommandTypeEnumMap = {
   CommandType.accept: 'accept',
   CommandType.askRole: 'askRole',
   CommandType.ignore: 'ignore',
+  CommandType.chipShot: 'chipShot',
+  CommandType.knuckleShot: 'knuckleShot',
+  CommandType.panenka: 'panenka',
+  CommandType.powerShot: 'powerShot',
+  CommandType.curvedShot: 'curvedShot',
+  CommandType.shoutEncourage: 'shoutEncourage',
+  CommandType.shoutDemand: 'shoutDemand',
+  CommandType.shoutCalm: 'shoutCalm',
 };
