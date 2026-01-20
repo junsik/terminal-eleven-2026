@@ -34,26 +34,7 @@ class HomeScreen extends ConsumerWidget {
           icon: const Icon(Icons.menu),
           onSelected: (value) {
             if (value == 'lobby') {
-              showDialog(
-                context: context,
-                builder: (ctx) => AlertDialog(
-                  title: const Text('로비로 이동'),
-                  content: const Text('현재 게임을 저장하고 로비로 이동합니다.'),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: const Text('취소'),
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(ctx);
-                        context.go('/');
-                      },
-                      child: const Text('확인'),
-                    ),
-                  ],
-                ),
-              );
+              context.go('/');
             } else if (value == 'help') {
               context.push('/help');
             }

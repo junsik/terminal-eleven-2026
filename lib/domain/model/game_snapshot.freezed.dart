@@ -30,7 +30,9 @@ mixin _$GameSnapshot {
       throw _privateConstructorUsedError; // 진행 중인 경기 (있을 경우)
   int get weeklyActionsRemaining =>
       throw _privateConstructorUsedError; // 이번 주 남은 행동 횟수
-  LeagueStats? get leagueStats => throw _privateConstructorUsedError;
+  LeagueStats? get leagueStats =>
+      throw _privateConstructorUsedError; // 개인 순위용 리그 통계
+  List<InboxMessage> get inboxMessages => throw _privateConstructorUsedError;
 
   /// Serializes this GameSnapshot to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -58,6 +60,7 @@ abstract class $GameSnapshotCopyWith<$Res> {
     MatchSession? activeMatch,
     int weeklyActionsRemaining,
     LeagueStats? leagueStats,
+    List<InboxMessage> inboxMessages,
   });
 
   $PlayerCharacterCopyWith<$Res> get pc;
@@ -89,6 +92,7 @@ class _$GameSnapshotCopyWithImpl<$Res, $Val extends GameSnapshot>
     Object? activeMatch = freezed,
     Object? weeklyActionsRemaining = null,
     Object? leagueStats = freezed,
+    Object? inboxMessages = null,
   }) {
     return _then(
       _value.copyWith(
@@ -124,6 +128,10 @@ class _$GameSnapshotCopyWithImpl<$Res, $Val extends GameSnapshot>
                 ? _value.leagueStats
                 : leagueStats // ignore: cast_nullable_to_non_nullable
                       as LeagueStats?,
+            inboxMessages: null == inboxMessages
+                ? _value.inboxMessages
+                : inboxMessages // ignore: cast_nullable_to_non_nullable
+                      as List<InboxMessage>,
           )
           as $Val,
     );
@@ -196,6 +204,7 @@ abstract class _$$GameSnapshotImplCopyWith<$Res>
     MatchSession? activeMatch,
     int weeklyActionsRemaining,
     LeagueStats? leagueStats,
+    List<InboxMessage> inboxMessages,
   });
 
   @override
@@ -230,6 +239,7 @@ class __$$GameSnapshotImplCopyWithImpl<$Res>
     Object? activeMatch = freezed,
     Object? weeklyActionsRemaining = null,
     Object? leagueStats = freezed,
+    Object? inboxMessages = null,
   }) {
     return _then(
       _$GameSnapshotImpl(
@@ -265,6 +275,10 @@ class __$$GameSnapshotImplCopyWithImpl<$Res>
             ? _value.leagueStats
             : leagueStats // ignore: cast_nullable_to_non_nullable
                   as LeagueStats?,
+        inboxMessages: null == inboxMessages
+            ? _value._inboxMessages
+            : inboxMessages // ignore: cast_nullable_to_non_nullable
+                  as List<InboxMessage>,
       ),
     );
   }
@@ -282,7 +296,8 @@ class _$GameSnapshotImpl implements _GameSnapshot {
     this.activeMatch,
     this.weeklyActionsRemaining = 3,
     this.leagueStats,
-  });
+    final List<InboxMessage> inboxMessages = const [],
+  }) : _inboxMessages = inboxMessages;
 
   factory _$GameSnapshotImpl.fromJson(Map<String, dynamic> json) =>
       _$$GameSnapshotImplFromJson(json);
@@ -313,10 +328,20 @@ class _$GameSnapshotImpl implements _GameSnapshot {
   // 이번 주 남은 행동 횟수
   @override
   final LeagueStats? leagueStats;
+  // 개인 순위용 리그 통계
+  final List<InboxMessage> _inboxMessages;
+  // 개인 순위용 리그 통계
+  @override
+  @JsonKey()
+  List<InboxMessage> get inboxMessages {
+    if (_inboxMessages is EqualUnmodifiableListView) return _inboxMessages;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableListView(_inboxMessages);
+  }
 
   @override
   String toString() {
-    return 'GameSnapshot(version: $version, savedAt: $savedAt, gameState: $gameState, pc: $pc, season: $season, activeMatch: $activeMatch, weeklyActionsRemaining: $weeklyActionsRemaining, leagueStats: $leagueStats)';
+    return 'GameSnapshot(version: $version, savedAt: $savedAt, gameState: $gameState, pc: $pc, season: $season, activeMatch: $activeMatch, weeklyActionsRemaining: $weeklyActionsRemaining, leagueStats: $leagueStats, inboxMessages: $inboxMessages)';
   }
 
   @override
@@ -335,7 +360,11 @@ class _$GameSnapshotImpl implements _GameSnapshot {
             (identical(other.weeklyActionsRemaining, weeklyActionsRemaining) ||
                 other.weeklyActionsRemaining == weeklyActionsRemaining) &&
             (identical(other.leagueStats, leagueStats) ||
-                other.leagueStats == leagueStats));
+                other.leagueStats == leagueStats) &&
+            const DeepCollectionEquality().equals(
+              other._inboxMessages,
+              _inboxMessages,
+            ));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
@@ -350,6 +379,7 @@ class _$GameSnapshotImpl implements _GameSnapshot {
     activeMatch,
     weeklyActionsRemaining,
     leagueStats,
+    const DeepCollectionEquality().hash(_inboxMessages),
   );
 
   /// Create a copy of GameSnapshot
@@ -376,6 +406,7 @@ abstract class _GameSnapshot implements GameSnapshot {
     final MatchSession? activeMatch,
     final int weeklyActionsRemaining,
     final LeagueStats? leagueStats,
+    final List<InboxMessage> inboxMessages,
   }) = _$GameSnapshotImpl;
 
   factory _GameSnapshot.fromJson(Map<String, dynamic> json) =
@@ -396,7 +427,9 @@ abstract class _GameSnapshot implements GameSnapshot {
   @override
   int get weeklyActionsRemaining; // 이번 주 남은 행동 횟수
   @override
-  LeagueStats? get leagueStats;
+  LeagueStats? get leagueStats; // 개인 순위용 리그 통계
+  @override
+  List<InboxMessage> get inboxMessages;
 
   /// Create a copy of GameSnapshot
   /// with the given fields replaced by the non-null parameter values.

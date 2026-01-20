@@ -5,6 +5,7 @@ import 'player.dart';
 import 'team.dart';
 import 'match.dart';
 import 'league.dart';
+import 'inbox.dart';
 
 part 'game_snapshot.freezed.dart';
 part 'game_snapshot.g.dart';
@@ -43,6 +44,41 @@ enum TrainingType {
   rest, // 휴식
   @JsonValue('rehab')
   rehab, // 재활
+}
+
+/// 훈련 강도
+enum TrainingIntensity {
+  @JsonValue('light')
+  light, // 가볍게 - 스탯↓ 피로↓ 부상위험↓
+  @JsonValue('normal')
+  normal, // 보통 - 기본
+  @JsonValue('intense')
+  intense, // 강하게 - 스탯↑ 피로↑ 부상위험↑
+}
+
+/// 훈련 강도 확장
+extension TrainingIntensityX on TrainingIntensity {
+  String get displayName {
+    switch (this) {
+      case TrainingIntensity.light:
+        return '가볍게';
+      case TrainingIntensity.normal:
+        return '보통';
+      case TrainingIntensity.intense:
+        return '강하게';
+    }
+  }
+
+  String get description {
+    switch (this) {
+      case TrainingIntensity.light:
+        return '효과 70%, 피로 70%, 부상위험 낮음';
+      case TrainingIntensity.normal:
+        return '기본 효과';
+      case TrainingIntensity.intense:
+        return '효과 150%, 피로 150%, 부상위험 높음';
+    }
+  }
 }
 
 /// 훈련 타입 확장
@@ -114,6 +150,7 @@ class GameSnapshot with _$GameSnapshot {
     MatchSession? activeMatch, // 진행 중인 경기 (있을 경우)
     @Default(3) int weeklyActionsRemaining, // 이번 주 남은 행동 횟수
     LeagueStats? leagueStats, // 개인 순위용 리그 통계
+    @Default([]) List<InboxMessage> inboxMessages, // 인박스 메시지
   }) = _GameSnapshot;
 
   factory GameSnapshot.fromJson(Map<String, dynamic> json) =>

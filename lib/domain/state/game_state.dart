@@ -74,6 +74,7 @@ class GameState with _$GameState {
         version: snap.version,
         savedAt: snap.savedAt,
       ),
+      inbox: InboxState(messages: snap.inboxMessages),
     );
   }
 
@@ -95,6 +96,7 @@ class GameState with _$GameState {
       activeMatch: ui.activeMatch,
       weeklyActionsRemaining: player.weeklyActionsRemaining,
       leagueStats: season.leagueStats,
+      inboxMessages: inbox.messages,
     );
   }
 }

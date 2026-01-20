@@ -23,6 +23,11 @@ _$GameSnapshotImpl _$$GameSnapshotImplFromJson(Map<String, dynamic> json) =>
       leagueStats: json['leagueStats'] == null
           ? null
           : LeagueStats.fromJson(json['leagueStats'] as Map<String, dynamic>),
+      inboxMessages:
+          (json['inboxMessages'] as List<dynamic>?)
+              ?.map((e) => InboxMessage.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          const [],
     );
 
 Map<String, dynamic> _$$GameSnapshotImplToJson(_$GameSnapshotImpl instance) =>
@@ -35,6 +40,7 @@ Map<String, dynamic> _$$GameSnapshotImplToJson(_$GameSnapshotImpl instance) =>
       'activeMatch': instance.activeMatch,
       'weeklyActionsRemaining': instance.weeklyActionsRemaining,
       'leagueStats': instance.leagueStats,
+      'inboxMessages': instance.inboxMessages,
     };
 
 const _$GameStateEnumMap = {
